@@ -10,7 +10,7 @@ namespace Nimbus.Painel
 {
     internal interface IPainel
     {
-        public Event HandleInput(ConsoleKey key);
+        public Event? HandleInput(ConsoleKey key);
 
         public IRenderable Render();
 

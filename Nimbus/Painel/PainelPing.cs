@@ -13,9 +13,9 @@ namespace Nimbus.Painel
     {
         public bool RequestFullScreen { get { return false; } }
 
-        public Event HandleInput(ConsoleKey key)
+        public Event? HandleInput(ConsoleKey key)
         {
-            Event mEvent = Event.None;
+            Event? mEvent = null;
             if (key == ConsoleKey.Escape)
             {
                 mEvent = Event.ClosePanel;

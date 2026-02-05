@@ -17,9 +17,9 @@ namespace Nimbus.Painel
 
         public bool RequestFullScreen { get { return false; } }
 
-        public Event HandleInput(ConsoleKey key)
+        public Event? HandleInput(ConsoleKey key)
         {
-            Event mEvent = Event.None;
+            Event? mEvent = null;
             switch (key)
             {
                 case ConsoleKey.UpArrow:
@@ -41,6 +41,9 @@ namespace Nimbus.Painel
                     {
                         case PainelInicialOpcoes.Ping:
                             mEvent = Event.OpenPing;
+                            break;
+                        case PainelInicialOpcoes.MachineTree:
+                            mEvent = Event.OpenMachineTree;
                             break;
                         default:
                             // mEvent = Event.None;
@@ -94,6 +97,7 @@ namespace Nimbus.Painel
     enum PainelInicialOpcoes
     {
         Ping,
+        MachineTree,
         Config,
         Option1,
         Option2,

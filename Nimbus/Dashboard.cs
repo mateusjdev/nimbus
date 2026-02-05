@@ -102,9 +102,9 @@ namespace Nimbus
             var key = Console.ReadKey().Key;
 
             var mEvent = PainelFocado.HandleInput(key);
-            if (mEvent != Event.None)
+            if (mEvent.HasValue)
             {
-                eventQueue.Enqueue(mEvent);
+                eventQueue.Enqueue(mEvent.Value);
             }
 
             FlagRequestDraw = true;
@@ -119,8 +119,15 @@ namespace Nimbus
                 {
                     case Event.OpenPing:
                         {
-                            var painelPing = new PainelPing();
-                            painelStack.AddLast(painelPing);
+                            var novoPainel = new PainelPing();
+                            painelStack.AddLast(novoPainel);
+                            FlagRequestDraw = true;
+                        }
+                        break;
+                    case Event.OpenMachineTree:
+                        {
+                            var novoPainel = new PainelMachinesTree();
+                            painelStack.AddLast(novoPainel);
                             FlagRequestDraw = true;
                         }
                         break;
@@ -131,6 +138,7 @@ namespace Nimbus
                             {
                                 FlagExit = true;
                             }
+                            FlagRequestDraw = true;
                         }
                         break;
                 }

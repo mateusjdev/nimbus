@@ -50,9 +50,9 @@ namespace Nimbus.Painel
             }
         }
 
-        public Event HandleInput(ConsoleKey key)
+        public Event? HandleInput(ConsoleKey key)
         {
-            return Event.None;
+            return null;
         }
 
         public IRenderable Render()

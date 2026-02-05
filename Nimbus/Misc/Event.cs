@@ -8,8 +8,8 @@ namespace Nimbus.Misc
 {
     public enum Event
     {
-        None,
         ClosePanel,
-        OpenPing
+        OpenPing,
+        OpenMachineTree
     }
 }
