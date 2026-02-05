@@ -150,6 +150,7 @@ namespace Nimbus
             AnsiConsole.Clear();
             var grid = CriarDashboard();
             AnsiConsole.Write(grid);
+            AnsiConsole.Cursor.MoveLeft(10000);
         }
 
         public void Start()
@@ -162,6 +163,7 @@ namespace Nimbus
 
                 if (FlagExit)
                 {
+                    AnsiConsole.Clear();
                     break;
                 }
 

@@ -32,37 +32,55 @@ using System.Threading.Tasks;
 
 namespace Nimbus.Painel
 {
+    internal abstract class Icons
+    {
+        internal const string LevelSpacing = "  ";
+        internal const string OpenFolder = "▼";
+        internal const string ClosedFolder = "►";
+        internal const string Machine = "■";
+        internal const string Selection = "*";
+    }
+
     internal enum TreeItemType
     {
         Folder,
         Machine
     }
 
-    interface ITreeItem
+    internal interface ITreeItem
     {
         public string Path { get; }
 
+        public bool IsToggleable { get; }
+
         public string Name { get; }
 
-        public IRenderable Render();
-
-        public string TextRender();
+        public IRenderable[] RenderTree();
 
         public void SetLevel(int level);
 
         public void SetSelected(bool value);
+
+        public bool MoveSelectUp();
+
+        public bool MoveSelectDown();
+
+        public void Toggle();
     }
 
 
     internal class TreeItemFolder : ITreeItem
     {
+        private bool isOpened = false;
         private int level;
-        private bool isSelected = false;
+        private int isSelected = -1;
         private string name;
 
         public string Path { get; }
         public string Name { get { return name; } }
+        public bool IsToggleable { get { return true; } }
         public bool IsOpened { get; }
+        public bool IsSelected { get { return isSelected >= 0; } }
         private int Count { get { return items.Count; } }
 
         private List<ITreeItem> items = new();
@@ -73,6 +91,100 @@ namespace Nimbus.Painel
             Path = path;
             IsOpened = false;
             this.level = level;
+        }
+
+        public void Toggle()
+        {
+            if (isSelected == 0)
+            {
+                isOpened = !isOpened;
+            }
+            else if (isSelected > 0)
+            {
+                var el = items.ElementAt(isSelected - 1);
+                el.Toggle();
+            }
+        }
+
+        public bool MoveSelectUp()
+        {
+            if (!isOpened)
+            {
+                return true;
+            }
+
+            bool overflow = false;
+            if (isSelected < 0)
+            {
+                isSelected = items.Count;
+                var el = items.ElementAt(isSelected - 1);
+                el.SetSelected(true);
+                overflow = true;
+            }
+            else if (isSelected == 0)
+            {
+                isSelected--;
+                overflow = true;
+            }
+            else if (isSelected > 0)
+            {
+                var el1 = items.ElementAt(isSelected - 1);
+                var ovflw = el1.MoveSelectUp();
+                if (ovflw)
+                {
+                    el1.SetSelected(false);
+                    isSelected--;
+                    if (isSelected > 0)
+                    {
+                        var el = items.ElementAt(isSelected - 1);
+                        el.SetSelected(true);
+                        el.MoveSelectUp();
+                        if (el is TreeItemFolder)
+                        {
+                            el.MoveSelectUp();
+                        }
+                    }
+                }
+            }
+            return overflow;
+        }
+
+        public bool MoveSelectDown()
+        {
+            if (!isOpened)
+            {
+                return true;
+            }
+
+            bool overflow = false;
+            if (isSelected < 0)
+            {
+                overflow = true;
+            }
+            else if (isSelected == 0)
+            {
+                isSelected++;
+                items.ElementAt(0).SetSelected(true);
+            }
+            else if (isSelected > 0)
+            {
+                var ovflw = items.ElementAt(isSelected - 1).MoveSelectDown();
+                if (ovflw)
+                {
+                    items.ElementAt(isSelected - 1).SetSelected(false);
+                    isSelected++;
+                    if (isSelected > items.Count)
+                    {
+                        isSelected = -1;
+                        overflow = true;
+                    }
+                    else
+                    {
+                        items.ElementAt(isSelected - 1).SetSelected(true);
+                    }
+                }
+            }
+            return overflow;
         }
 
         public void AddTreeItem(ITreeItem item)
@@ -91,83 +203,41 @@ namespace Nimbus.Painel
         }
 
         // TODO: Merge/Reuse TextRender and SplitRender
-        public string TextRender()
+        private IRenderable Render()
         {
             StringBuilder str = new();
-            if (isSelected)
-            {
-                str.Append("[blue]>");
-            }
-            else
-            {
-                str.Append(" ");
-            }
+            str.Append(isSelected == 0 ? $"[blue]{Icons.Selection} " : "  ");
 
             for (int n = level; n > 0; n--)
-                str.Append(" ");
-            str.Append(Name);
+                str.Append(Icons.LevelSpacing);
 
-            if (isSelected)
-            {
-                str.Append("[/]");
-            }
-
-            str.AppendLine();
-
-            foreach (var item in items)
-            {
-                str.Append(item.TextRender());
-            }
-
-            return str.ToString();
-        }
-
-        public IRenderable Render()
-        {
-            StringBuilder str = new();
-            if (isSelected)
-            {
-                str.Append("[blue]>");
-            }
-            else
-            {
-                str.Append(" ");
-            }
-
-            for (int n = level; n > 0; n--)
-                str.Append(" ");
-            str.Append(Name);
-
-            if (isSelected)
-            {
-                str.Append("[/]");
-            }
-
-            str.AppendLine();
-
-            foreach (var item in items)
-            {
-                // Provavelmente erro
-                str.Append(item.TextRender());
-            }
+            str.Append(isOpened ? $"{Icons.OpenFolder} " : $"{Icons.ClosedFolder} ");
+            str.Append(isSelected == 0 ? $"{Name}[/]" : $"{Name}");
 
             var text = new Markup(str.ToString())
                 .Overflow(Overflow.Ellipsis);
+
             return text;
+        }
+
+        public IRenderable[] RenderTree()
+        {
+            List<IRenderable> renders = [Render()];
+
+            if (isOpened)
+            {
+                foreach (var item in items)
+                {
+                    renders.AddRange(item.RenderTree());
+                }
+            }
+
+            return [.. renders];
         }
 
         public void SetSelected(bool value)
         {
-            isSelected = value;
-            /*
-            if (isSelected)
-            {
-                foreach (var item in items)
-                {
-                    item.SetSelected(false);
-                }
-            }
-            */
+            isSelected = value ? 0 : -1;
         }
     }
 
@@ -178,6 +248,9 @@ namespace Nimbus.Painel
         private string name;
 
         public string Path { get; }
+
+        public bool IsToggleable { get { return false; } }
+
         public string Name { get { return name; } }
 
         public TreeItemMachine(string name, string path, int level = 0)
@@ -192,46 +265,33 @@ namespace Nimbus.Painel
             this.level = level;
         }
 
-        // TODO: Merge/Reuse TextRender and SplitRender
-        public string TextRender()
+        public void Toggle() { }
+
+        public bool MoveSelectUp()
         {
-            StringBuilder str = new();
-            if (isSelected)
-            {
-                str.Append(">");
-            }
-            else
-            {
-                str.Append(" ");
-            }
-
-            for (int n = level; n > 0; n--)
-                str.Append(" ");
-            str.AppendLine(Name);
-
-            return str.ToString();
+            return true;
         }
 
-        public IRenderable Render()
+        public bool MoveSelectDown()
+        {
+            return true;
+        }
+
+        public IRenderable[] RenderTree()
         {
             StringBuilder str = new();
-            if (isSelected)
-            {
-                str.Append(">");
-            }
-            else
-            {
-                str.Append(" ");
-            }
+            str.Append(isSelected ? $"[blue]{Icons.Selection} " : "  ");
 
             for (int n = level; n > 0; n--)
-                str.Append(" ");
-            str.AppendLine(Name);
+                str.Append(Icons.LevelSpacing);
+
+            str.Append($"{Icons.Machine} ");
+            str.Append(isSelected ? $"{Name}[/]" : $"{Name}");
 
             var text = new Markup(str.ToString())
                 .Overflow(Overflow.Ellipsis);
 
-            return text;
+            return [text];
         }
 
         public void SetSelected(bool value)
@@ -242,37 +302,11 @@ namespace Nimbus.Painel
 
     internal class PainelMachinesTree : IPainel
     {
-        public bool RequestFullScreen { get { return false; } }
+        TreeItemFolder root;
 
-        public Event? HandleInput(ConsoleKey key)
+        internal PainelMachinesTree()
         {
-            Event? mEvent = null;
-            switch (key)
-            {
-                case ConsoleKey.Escape:
-                    mEvent = Event.ClosePanel;
-                    break;
-                case ConsoleKey.P:
-                    mEvent = Event.OpenPing;
-                    break;
-            }
-            return mEvent;
-        }
-
-        public IRenderable Render()
-        {
-            /*
-            var tree = new Tree("Root");
-            tree.Guide(TreeGuide.Line);
-
-            var node1 = tree.AddNode("Child 1");
-            node1.AddNode("Grandchild 1.1");
-            node1.AddNode("Grandchild 1.2");
-
-            tree.AddNode("Child 2");
-            */
-
-            var root = new TreeItemFolder("root", "/root/");
+            root = new TreeItemFolder("root", "/root/");
 
             var room1 = new TreeItemFolder("room1", "/root/room1/");
 
@@ -299,8 +333,81 @@ namespace Nimbus.Painel
             root.AddTreeItem(room3);
 
             root.SetSelected(true);
+        }
 
-            var panel = new Panel(root.Render())
+        public bool RequestFullScreen { get { return false; } }
+
+        public Event? HandleInput(ConsoleKey key)
+        {
+            Event? mEvent = null;
+            switch (key)
+            {
+                case ConsoleKey.Escape:
+                    mEvent = Event.ClosePanel;
+                    break;
+                case ConsoleKey.UpArrow:
+                    MoveSelectUp();
+                    break;
+                case ConsoleKey.DownArrow:
+                    MoveSelectDown();
+                    break;
+                case ConsoleKey.Enter:
+                    break;
+                case ConsoleKey.Spacebar:
+                    root.Toggle();
+                    break;
+                case ConsoleKey.E:
+                    break;
+                case ConsoleKey.P:
+                    mEvent = Event.OpenPing;
+                    break;
+            }
+            return mEvent;
+        }
+
+        private void MoveSelectUp()
+        {
+            if (root == null)
+            {
+                return;
+            }
+
+            var overflow = root.MoveSelectUp();
+            if (overflow)
+            {
+                root.SetSelected(true);
+            }
+        }
+
+        private void MoveSelectDown()
+        {
+            if (root == null)
+            {
+                return;
+            }
+
+            var overflow = root.MoveSelectDown();
+            if (overflow)
+            {
+                root.SetSelected(true);
+            }
+        }
+
+        public IRenderable Render()
+        {
+            /*
+            var tree = new Tree("Root");
+            tree.Guide(TreeGuide.Line);
+
+            var node1 = tree.AddNode("Child 1");
+            node1.AddNode("Grandchild 1.1");
+            node1.AddNode("Grandchild 1.2");
+
+            tree.AddNode("Child 2");
+            */
+
+            var layout = new Rows(root.RenderTree());
+            var panel = new Panel(layout)
                .Header("Machine Tree")
                .HeaderAlignment(Justify.Center)
                .Border(BoxBorder.Rounded)
