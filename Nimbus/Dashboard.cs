@@ -62,8 +62,8 @@ namespace Nimbus
                 if (FlagScreenSize)
                 {
                     var alerta = PainelFocado;
-                    if(alerta is PainelAlerta)
-                    { 
+                    if (alerta is PainelAlerta)
+                    {
                         ((PainelAlerta)alerta).ChangeText(
                             $"Tamanho da janela deve ser maior que 80x24! ({consoleWidth}x{consoleHeight})"
                             );
@@ -89,7 +89,7 @@ namespace Nimbus
                 // Remover Alerta
                 painelStack.RemoveLast();
             }
-            
+
         }
 
         private void OnInput()
@@ -171,29 +171,61 @@ namespace Nimbus
         {
             int minSelecaoWidth = 30;
 
-            Layout layout;
+            Layout layout = new Layout("Root");
+            Layout layoutContent = new Layout("Content");
+            Layout layoutMain = new Layout("Main");
 
+            var controls = PainelFocado.RenderControls();
             if (PainelFocado.RequestFullScreen || painelStack.Count <= 1)
             {
-                layout = new Layout("Root")
-                    .SplitColumns(
-                        new Layout("Sidebar")
+                if (controls != null)
+                {
+                    layout = layout.SplitRows(
+                        layoutContent.SplitColumns(layoutMain),
+                        new Layout("Controls").Size(1)
                     );
+
+                    layout["Controls"].Update(controls);
+                }
+                else
+                {
+                    layout = layout.SplitRows(
+                        layoutContent.SplitColumns(layoutMain)
+                    );
+                }
             }
             else
             {
-                layout = new Layout("Root")
-                    .SplitColumns(
-                        new Layout("Sidebar").Ratio(2),
-                        new Layout("Content").MinimumSize(minSelecaoWidth).Ratio(1)
+                if (controls != null)
+                {
+
+                    layout = layout.SplitRows(
+                        layoutContent.SplitColumns(
+                            layoutMain.Ratio(2),
+                            new Layout("History").MinimumSize(minSelecaoWidth).Ratio(1)
+                        ),
+                        new Layout("Controls").Size(1)
                     );
 
+                    layout["Controls"].Update(controls);
+                }
+                else
+                {
+                    layout = layout.SplitRows(
+                        layoutContent.SplitColumns(
+                            layoutMain.Ratio(2),
+                            new Layout("History").MinimumSize(minSelecaoWidth).Ratio(1)
+                        )
+                    );
+                }
+
+                // TODO: Fix possible nullable
                 var beforeLast = painelStack.Last.Previous.Value.Render();
-                layout["Content"].Update(beforeLast);
+                layout["History"].Update(beforeLast);
             }
 
             var menuInicial = PainelFocado.Render();
-            layout["Sidebar"].Update(menuInicial);
+            layout["Main"].Update(menuInicial);
 
             return layout;
         }

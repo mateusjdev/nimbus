@@ -84,6 +84,11 @@ namespace Nimbus.Painel
 
             return panel;
         }
+
+        public IRenderable RenderControls()
+        {
+            return new Text("[Esc] Sair [Enter] Selecionar", new Style(Color.Purple));
+        }
     }
 
     enum PainelInicialOpcoes

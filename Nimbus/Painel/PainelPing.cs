@@ -36,5 +36,10 @@ namespace Nimbus.Painel
 
             return panel;
         }
+
+        public IRenderable RenderControls()
+        {
+            return new Text("[Esc] Voltar", new Style(Color.Purple));
+        }
     }
 }

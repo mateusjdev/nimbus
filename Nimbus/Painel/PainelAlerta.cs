@@ -68,6 +68,11 @@ namespace Nimbus.Painel
             return Align.Center(panel, VerticalAlignment.Middle);
         }
 
+        public IRenderable? RenderControls()
+        {
+            return null;
+        }
+
         public void ChangeText(string msg)
         {
             SetMarkup();
