@@ -28,6 +28,8 @@ namespace Nimbus
         private LinkedList<IPainel> painelStack = new();
         private Queue<Event> eventQueue = new();
 
+        private const int UpdateIntervalMilisseconds = 100;
+
         private IPainel PainelFocado
         {
             get { return painelStack.Last(); }
@@ -43,29 +45,51 @@ namespace Nimbus
             var consoleWidth = AnsiConsole.Console.Profile.Width;
             var consoleHeight = AnsiConsole.Console.Profile.Height;
 
-            if (consoleWidth != ConsoleWidth || consoleHeight != ConsoleHeight)
+            var sizeUpdated = consoleWidth != ConsoleWidth || consoleHeight != ConsoleHeight;
+            if (!sizeUpdated)
             {
-                FlagRequestDraw = true;
-                ConsoleWidth = consoleWidth;
-                ConsoleHeight = consoleHeight;
+                return;
             }
 
+            FlagRequestDraw = true;
+            ConsoleWidth = consoleWidth;
+            ConsoleHeight = consoleHeight;
+
             var flagScreenSize = ConsoleWidth < MinWidth || ConsoleHeight < MinHeight;
-            if (flagScreenSize != FlagScreenSize)
+            var flagScreenSizeToggled = flagScreenSize != FlagScreenSize;
+            if (!flagScreenSizeToggled)
             {
-                FlagScreenSize = flagScreenSize;
-                if (flagScreenSize)
+                if (FlagScreenSize)
                 {
-                    // Criar Alerta
-                    var painelAlerta = new PainelAlerta(TipoAlerta.Error, "Tamanho da janela deve ser maior que 80x24!");
-                    painelStack.AddLast(painelAlerta);
+                    var alerta = PainelFocado;
+                    if(alerta is PainelAlerta)
+                    { 
+                        ((PainelAlerta)alerta).ChangeText(
+                            $"Tamanho da janela deve ser maior que 80x24! ({consoleWidth}x{consoleHeight})"
+                            );
+                    }
                 }
-                else
-                {
-                    // Remover Alerta
-                    painelStack.RemoveLast();
-                }
+
+                return;
             }
+
+            FlagScreenSize = flagScreenSize;
+            if (flagScreenSize)
+            {
+                // Criar Alerta
+
+                var painelAlerta = new PainelAlerta(
+                    TipoAlerta.Error,
+                    $"Tamanho da janela deve ser maior que 80x24! ({consoleWidth}x{consoleHeight})"
+                    );
+                painelStack.AddLast(painelAlerta);
+            }
+            else
+            {
+                // Remover Alerta
+                painelStack.RemoveLast();
+            }
+            
         }
 
         private void OnInput()
@@ -139,7 +163,7 @@ namespace Nimbus
                     FlagRequestDraw = false;
                 }
 
-                Thread.Sleep(200);
+                Thread.Sleep(UpdateIntervalMilisseconds);
             }
         }
 

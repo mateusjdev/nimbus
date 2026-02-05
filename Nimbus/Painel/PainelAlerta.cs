@@ -23,11 +23,20 @@ namespace Nimbus.Painel
         private StringBuilder str = new();
 
         private Color borderColor = Color.White;
+        private TipoAlerta tipoAlerta = TipoAlerta.Information;
 
         public bool RequestFullScreen { get { return true; } }
 
         public PainelAlerta(TipoAlerta tipoAlerta, string msg)
         {
+            this.tipoAlerta = tipoAlerta;
+            SetMarkup();
+            str.Append(msg);
+        }
+
+        private void SetMarkup()
+        {
+            str.Clear();
             switch (tipoAlerta)
             {
                 case TipoAlerta.Error:
@@ -39,8 +48,6 @@ namespace Nimbus.Painel
                     borderColor = Color.Blue;
                     break;
             }
-
-            str.Append(msg);
         }
 
         public Event HandleInput(ConsoleKey key)
@@ -50,10 +57,7 @@ namespace Nimbus.Painel
 
         public IRenderable Render()
         {
-            var consoleWidth = AnsiConsole.Console.Profile.Width;
-            var consoleHeight = AnsiConsole.Console.Profile.Height;
-
-            var text = new Markup(str.ToString() + $" ({consoleWidth}x{consoleHeight})")
+            var text = new Markup(str.ToString())
                 { Justification = Justify.Center }
                 .Centered();
             var panel = new Panel(text)
@@ -62,6 +66,12 @@ namespace Nimbus.Painel
                 .Border(BoxBorder.Rounded)
                 .BorderColor(borderColor);
             return Align.Center(panel, VerticalAlignment.Middle);
+        }
+
+        public void ChangeText(string msg)
+        {
+            SetMarkup();
+            str.Append(msg);
         }
     }
 }
