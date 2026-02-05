@@ -1,9 +1,12 @@
-﻿using Spectre.Console;
+﻿using Nimbus.Misc;
+using Nimbus.Painel;
+using Spectre.Console;
 using Spectre.Console.Rendering;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Metadata;
+using System.Runtime.ConstrainedExecution;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,19 +25,16 @@ namespace Nimbus
         private bool FlagExit = false;
         private bool FlagRequestDraw = false;
 
-        // private Views View = Views.Inicial;
-        private LinkedList<Painel> painelStack = new();
+        private LinkedList<IPainel> painelStack = new();
         private Queue<Event> eventQueue = new();
 
-        private Painel PainelFocado
+        private IPainel PainelFocado
         {
             get { return painelStack.Last(); }
         }
 
         internal Dashboard()
         {
-            OnSizeUpdate();
-
             painelStack.AddLast(new PainelInicial());
         }
 
@@ -50,7 +50,22 @@ namespace Nimbus
                 ConsoleHeight = consoleHeight;
             }
 
-            FlagScreenSize = ConsoleWidth < MinWidth || ConsoleHeight < MinHeight;
+            var flagScreenSize = ConsoleWidth < MinWidth || ConsoleHeight < MinHeight;
+            if (flagScreenSize != FlagScreenSize)
+            {
+                FlagScreenSize = flagScreenSize;
+                if (flagScreenSize)
+                {
+                    // Criar Alerta
+                    var painelAlerta = new PainelAlerta(TipoAlerta.Error, "Tamanho da janela deve ser maior que 80x24!");
+                    painelStack.AddLast(painelAlerta);
+                }
+                else
+                {
+                    // Remover Alerta
+                    painelStack.RemoveLast();
+                }
+            }
         }
 
         private void OnInput()
@@ -73,42 +88,34 @@ namespace Nimbus
 
         private void OnEvent()
         {
-            if (eventQueue.Count <= 0)
+            while (eventQueue.Count > 0)
             {
-                return;
-            }
-
-            var mEvent = eventQueue.Dequeue();
-            switch (mEvent)
-            {
-                case Event.OpenPing:
-                    {
-                        var painelPing = new PainelPing();
-                        painelStack.AddLast(painelPing);
-                        FlagRequestDraw = true;
-                    }
-                    break;
-                case Event.ClosePanel:
-                    {
-                        painelStack.RemoveLast();
-                        if (painelStack.Count <= 0)
+                var mEvent = eventQueue.Dequeue();
+                switch (mEvent)
+                {
+                    case Event.OpenPing:
                         {
-                            FlagExit = true;
+                            var painelPing = new PainelPing();
+                            painelStack.AddLast(painelPing);
+                            FlagRequestDraw = true;
                         }
-                    }
-                    break;
+                        break;
+                    case Event.ClosePanel:
+                        {
+                            painelStack.RemoveLast();
+                            if (painelStack.Count <= 0)
+                            {
+                                FlagExit = true;
+                            }
+                        }
+                        break;
+                }
             }
         }
 
         private void Render()
         {
             AnsiConsole.Clear();
-            if (FlagScreenSize)
-            {
-                AnsiConsole.MarkupLineInterpolated($"[bold red]✗ Error:[/] Tamanho da janela deve ser maior que 80x24!");
-                return;
-            }
-
             var grid = CriarDashboard();
             AnsiConsole.Write(grid);
         }
@@ -142,7 +149,14 @@ namespace Nimbus
 
             Layout layout;
 
-            if (painelStack.Count > 1)
+            if (PainelFocado.RequestFullScreen || painelStack.Count <= 1)
+            {
+                layout = new Layout("Root")
+                    .SplitColumns(
+                        new Layout("Sidebar")
+                    );
+            }
+            else
             {
                 layout = new Layout("Root")
                     .SplitColumns(
@@ -151,33 +165,13 @@ namespace Nimbus
                     );
 
                 var beforeLast = painelStack.Last.Previous.Value.Render();
-                var panelRecente = CriarPainel(beforeLast);
-                layout["Content"].Update(panelRecente);
-            }
-            else
-            {
-                layout = new Layout("Root")
-                    .SplitColumns(
-                        new Layout("Sidebar")
-                    );
+                layout["Content"].Update(beforeLast);
             }
 
-            var criarMenuInicial = PainelFocado.Render();
-            var panelSelecao = CriarPainel(criarMenuInicial);
-            layout["Sidebar"].Update(panelSelecao);
+            var menuInicial = PainelFocado.Render();
+            layout["Sidebar"].Update(menuInicial);
 
             return layout;
-        }
-
-        private static Panel CriarPainel(IRenderable content)
-        {
-            var panel = new Panel(content)
-                .Header("Opções")
-                .HeaderAlignment(Justify.Center)
-                .Border(BoxBorder.Rounded)
-                .BorderColor(Color.Purple)
-                .Expand();
-            return panel;
         }
     }
 }

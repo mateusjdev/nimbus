@@ -1,23 +1,21 @@
-﻿using Spectre.Console;
+﻿using Nimbus.Misc;
+using Spectre.Console;
 using Spectre.Console.Rendering;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Nimbus
+namespace Nimbus.Painel
 {
-    interface Painel
-    {
-        public Event HandleInput(ConsoleKey key);
-        public IRenderable Render();
-    }
-
-    internal class PainelInicial : Painel
+    internal class PainelInicial : IPainel
     {
         private PainelInicialOpcoes opcaoSelecionada = PainelInicialOpcoes.Ping;
         private int MaxOpcoesMenuInicial = Enum.GetValues<PainelInicialOpcoes>().Count() - 1;
+
+        public bool RequestFullScreen { get { return false; } }
 
         public Event HandleInput(ConsoleKey key)
         {
@@ -75,7 +73,16 @@ namespace Nimbus
                     rows.Add(new Text($"  {op}") { Overflow = Overflow.Ellipsis });
                 }
             }
-            return new Rows(rows);
+
+            var iRows = new Rows(rows);
+            var panel = new Panel(iRows)
+                .Header("Opções")
+                .HeaderAlignment(Justify.Center)
+                .Border(BoxBorder.Rounded)
+                .BorderColor(Color.Purple)
+                .Expand();
+
+            return panel;
         }
     }
 
