@@ -32,13 +32,21 @@ using System.Threading.Tasks;
 
 namespace Nimbus.Painel
 {
+    // TODO: Improve tree ASCII characters
+    // root .
+    // ├─ item
+    // ├─ item
+    // ├─ item
+    // ├─ item
+    // └─ item
     internal abstract class Icons
     {
-        internal const string LevelSpacing = "  ";
-        internal const string OpenFolder = "▼";
-        internal const string ClosedFolder = "►";
-        internal const string Machine = "■";
-        internal const string Selection = "*";
+        internal const string LevelSpacing = "| ";
+        // https://www.compart.com/en/unicode/block/U+25A0
+        internal const string ItemFolderOpened = "▼";
+        internal const string ItemFolderClosed = "▶";
+        internal const string Item = "◇";
+        internal const string Selected = "»";
     }
 
     internal enum TreeItemType
@@ -102,10 +110,25 @@ namespace Nimbus.Painel
             else if (isSelected > 0)
             {
                 var el = items.ElementAt(isSelected - 1);
-                el.Toggle();
+                if (el.IsToggleable)
+                {
+                    el.Toggle();
+                }
+                else
+                {
+                    el.SetSelected(false);
+                    isSelected = 0;
+                    isOpened = !isOpened;
+                }
             }
         }
 
+        // FIX: select last item on subtree:
+        // Folder
+        //   Folder
+        //     Folder 
+        //       Item <- to this
+        //   Folder <- from this
         public bool MoveSelectUp()
         {
             if (!isOpened)
@@ -206,12 +229,12 @@ namespace Nimbus.Painel
         private IRenderable Render()
         {
             StringBuilder str = new();
-            str.Append(isSelected == 0 ? $"[blue]{Icons.Selection} " : "  ");
+            str.Append(isSelected == 0 ? $"[blue]{Icons.Selected} " : "  ");
 
             for (int n = level; n > 0; n--)
                 str.Append(Icons.LevelSpacing);
 
-            str.Append(isOpened ? $"{Icons.OpenFolder} " : $"{Icons.ClosedFolder} ");
+            str.Append(isOpened ? $"{Icons.ItemFolderOpened} " : $"{Icons.ItemFolderClosed} ");
             str.Append(isSelected == 0 ? $"{Name}[/]" : $"{Name}");
 
             var text = new Markup(str.ToString())
@@ -280,12 +303,38 @@ namespace Nimbus.Painel
         public IRenderable[] RenderTree()
         {
             StringBuilder str = new();
-            str.Append(isSelected ? $"[blue]{Icons.Selection} " : "  ");
+            str.Append(isSelected ? $"[blue]{Icons.Selected} " : "  ");
 
             for (int n = level; n > 0; n--)
                 str.Append(Icons.LevelSpacing);
 
-            str.Append($"{Icons.Machine} ");
+            if (isSelected)
+            {
+                str.Append("[/]");
+            }
+
+            str.Append($"[yellow]{Icons.Item}");
+            /*
+            Random r = new();
+            if (r.Next(0, 2) == 0)
+            {
+                str.Append($"[green]{Icons.Item}");
+            }
+            else
+            {
+                str.Append($"[red]{Icons.Item}");
+            }
+            */
+
+            if (isSelected)
+            {
+                str.Append("[/][blue] ");
+            }
+            else
+            {
+                str.Append("[/] ");
+            }
+
             str.Append(isSelected ? $"{Name}[/]" : $"{Name}");
 
             var text = new Markup(str.ToString())
@@ -310,11 +359,17 @@ namespace Nimbus.Painel
 
             var room1 = new TreeItemFolder("room1", "/root/room1/");
 
-            room1.AddTreeItem(new TreeItemMachine("machine1_1", "/root/room1/machine1_1"));
-            room1.AddTreeItem(new TreeItemMachine("machine1_2", "/root/room1/machine1_2"));
-            room1.AddTreeItem(new TreeItemMachine("machine1_3", "/root/room1/machine1_3"));
-            room1.AddTreeItem(new TreeItemMachine("machine1_4", "/root/room1/machine1_4"));
-            room1.AddTreeItem(new TreeItemMachine("machine1_5", "/root/room1/machine1_5"));
+            var place1 = new TreeItemFolder("place1", "/root/room1/place1");
+            var place2 = new TreeItemFolder("place2", "/root/room1/place2");
+
+            room1.AddTreeItem(place1);
+            room1.AddTreeItem(place2);
+
+            place1.AddTreeItem(new TreeItemMachine("machine1_1", "/root/room1/place1/machine1_1"));
+            place1.AddTreeItem(new TreeItemMachine("machine1_2", "/root/room1/place1/machine1_2"));
+            place1.AddTreeItem(new TreeItemMachine("machine1_3", "/root/room1/place1/machine1_3"));
+            place2.AddTreeItem(new TreeItemMachine("machine1_4", "/root/room1/place2/machine1_1"));
+            place2.AddTreeItem(new TreeItemMachine("machine1_5", "/root/room1/place2/machine1_1"));
 
             var room2 = new TreeItemFolder("room2", "/root/room2/");
 

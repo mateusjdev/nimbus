@@ -8,6 +8,7 @@ namespace Nimbus
     {
         static void Main(string[] args)
         {
+            Console.OutputEncoding = System.Text.Encoding.UTF8;
             var dashboard = new Dashboard();
             dashboard.Start();
         }
