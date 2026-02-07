@@ -10,12 +10,12 @@ namespace Nimbus.Painel
 {
     internal interface IPainel
     {
+        public bool RenderOptionFullScreen { get; }
+
         public Event? HandleInput(ConsoleKey key);
 
         public IRenderable Render();
 
         public IRenderable? RenderControls();
-
-        public bool RequestFullScreen { get; }
     }
 }

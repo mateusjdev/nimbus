@@ -10,45 +10,62 @@ using System.Threading.Tasks;
 
 namespace Nimbus.Painel
 {
-    internal struct PainelSelecionOptions<T>
-    {
-        internal string Text;
-        internal T Value;
-    }
 
-    internal class PainelCommandSelector<T> : IPainel
+    internal class PSelectPrompt<T> : IPainel where T : Enum
     {
-        internal List<PainelSelecionOptions<T>> options = new();
+        #region private
 
-        private string PanelName;
+        private struct PTreeOption
+        {
+            internal string Text;
+            internal T Value;
+            internal bool Confirm;
+        }
+
+        private readonly List<PTreeOption> options = [];
+
+        private readonly string PanelName;
 
         private Action? OnSelect;
 
-        internal PainelCommandSelector(string panelName)
+        private int OpSelecionada = 0;
+
+        private int OpCount { get { return options.Count; } }
+
+        #endregion private
+
+        #region public
+
+        internal PSelectPrompt(string panelName)
         {
             PanelName = panelName;
         }
 
-        private int OpSelecionada = 0;
-        private int OpCount { get { return options.Count; } }
-
-        public PainelCommandSelector<T> AddOption(string text, T value)
+        internal PSelectPrompt<T> AddOption(string text, T value, bool confirm = false)
         {
-            PainelSelecionOptions<T> op = new();
-            options.Add(new PainelSelecionOptions<T> { Text = text, Value = value });
+            options.Add(new PTreeOption { Text = text, Value = value, Confirm = confirm });
             return this;
         }
 
-        public T GetSelected()
+        internal T? GetSelected()
         {
+            if (options.Count == 0)
+            {
+                return default;
+            }
+
             // TODO: Check bounds
             return options.ElementAt(OpSelecionada).Value;
         }
 
-        public void SetOnSelect(Action action)
+        internal void SetOnSelect(Action action)
         {
             OnSelect = action;
         }
+
+        #endregion public
+
+        #region interface
 
         public bool RenderOptionFullScreen { get { return false; } }
 
@@ -63,6 +80,7 @@ namespace Nimbus.Painel
                     {
                         OpSelecionada = OpCount;
                     }
+                    mEvent = new Event(EventType.None, flagRequestRender: true);
                     break;
                 case ConsoleKey.DownArrow:
                     OpSelecionada++;
@@ -70,25 +88,27 @@ namespace Nimbus.Painel
                     {
                         OpSelecionada = 0;
                     }
+                    mEvent = new Event(EventType.None, flagRequestRender: true);
                     break;
                 case ConsoleKey.Enter:
-                    // TODO: Validate values (Ensure Non Integers
-                    // Confirm
-                    // Open Comand Executor
+                    if (options.ElementAt(OpSelecionada).Confirm)
+                    {
+                        // TODO: Prompt Confirm
+                    }
                     OnSelect?.Invoke();
+                    mEvent = new Event(EventType.None, flagRequestRender: true);
                     break;
                 case ConsoleKey.Escape:
-                    mEvent = new Event(EventType.ClosePanel);
+                    mEvent = new Event(EventType.ClosePanel, flagRequestRender: true);
                     break;
-
             }
             return mEvent;
         }
 
         public IRenderable Render()
         {
-            var rows = new List<Text>();
-            var selectedStyle = new Style(foreground: Color.Blue);
+            List<Text> rows = [];
+            var selectedStyle = new Style(foreground: Theme.SelectedItemColor);
 
             for (int i = 0; i < options.Count; i++)
             {
@@ -103,6 +123,7 @@ namespace Nimbus.Painel
             }
 
             var iRows = new Rows(rows);
+
             var panel = new Panel(iRows)
                 .Header(PanelName)
                 .HeaderAlignment(Justify.Center)
@@ -113,23 +134,11 @@ namespace Nimbus.Painel
             return panel;
         }
 
-        /*
-        public IRenderable Render()
-        {
-            var text = new Text("Pinging 1.1.1.1 with 32 bytes of data:");
-            var panel = new Panel(text)
-                .Header("Ping")
-                .HeaderAlignment(Justify.Center)
-                .Border(BoxBorder.Rounded)
-                .BorderColor(Color.Purple)
-                .Expand();
-
-            return panel;
-        }*/
-
         public IRenderable RenderControls()
         {
-            return new Text("[Esc] Voltar", new Style(Color.Purple));
+            return new Text("[Esc] Voltar [Enter] Selecionar", new Style(Theme.ControlsTextColor));
         }
+
+        #endregion interface
     }
 }

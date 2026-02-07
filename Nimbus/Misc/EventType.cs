@@ -9,6 +9,7 @@ namespace Nimbus.Misc
 {
     internal enum EventType
     {
+        None,
         ClosePanel,
         OpenMachineTree,
         OpenCommandSelector,
@@ -19,13 +20,15 @@ namespace Nimbus.Misc
 
     internal class Event
     {
-        public EventType Type { get; private set; }
-        public IEventExtra? Extra { get; private set; }
+        public EventType Type { get; }
+        public IEventExtra? Extra { get; }
+        public bool FlagRequestRender { get; }
 
-        internal Event(EventType tipo, IEventExtra? extra = null)
+        internal Event(EventType tipo, IEventExtra? extra = null, bool flagRequestRender = false)
         {
             Type = tipo;
             Extra = extra;
+            FlagRequestRender = flagRequestRender;
         }
     }
 

@@ -15,7 +15,7 @@ namespace Nimbus.Painel
         private PainelInicialOpcoes opcaoSelecionada = PainelInicialOpcoes.Ping;
         private int MaxOpcoesMenuInicial = Enum.GetValues<PainelInicialOpcoes>().Count() - 1;
 
-        public bool RequestFullScreen { get { return false; } }
+        public bool RenderOptionFullScreen { get { return false; } }
 
         // TODO: Make a interface or base class for selecion panels (CommandSelector ...)
         public Event? HandleInput(ConsoleKey key)

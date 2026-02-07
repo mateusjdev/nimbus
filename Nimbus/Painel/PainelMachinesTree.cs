@@ -1,4 +1,5 @@
-﻿using Nimbus.Misc;
+﻿using Nimbus.Config;
+using Nimbus.Misc;
 using Nimbus.Painel.MachineTree;
 using Spectre.Console;
 using Spectre.Console.Rendering;
@@ -31,25 +32,16 @@ using System.Threading.Tasks;
 // e = edit
 // p = ping
 
+// TODO: Improve tree ASCII characters
+// root .
+// ├─ item
+// ├─ item
+// ├─ item
+// ├─ item
+// └─ item
+
 namespace Nimbus.Painel
 {
-    // TODO: Improve tree ASCII characters
-    // root .
-    // ├─ item
-    // ├─ item
-    // ├─ item
-    // ├─ item
-    // └─ item
-    internal abstract class Icons
-    {
-        internal const string LevelSpacing = "| ";
-        // https://www.compart.com/en/unicode/block/U+25A0
-        internal const string ItemFolderOpened = "▼";
-        internal const string ItemFolderClosed = "▶";
-        internal const string Item = "◇";
-        internal const string Selected = "»";
-    }
-
     internal interface ITreeItem
     {
         public string Path { get; }
@@ -431,7 +423,7 @@ namespace Nimbus.Painel
             root.SetSelected(true);
         }
 
-        public bool RequestFullScreen { get { return false; } }
+        public bool RenderOptionFullScreen { get { return false; } }
 
         public Event? HandleInput(ConsoleKey key)
         {

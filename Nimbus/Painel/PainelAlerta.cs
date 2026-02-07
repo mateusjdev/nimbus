@@ -25,7 +25,7 @@ namespace Nimbus.Painel
         private Color borderColor = Color.White;
         private TipoAlerta tipoAlerta = TipoAlerta.Information;
 
-        public bool RequestFullScreen { get { return true; } }
+        public bool RenderOptionFullScreen { get { return true; } }
 
         public PainelAlerta(TipoAlerta tipoAlerta, string msg)
         {

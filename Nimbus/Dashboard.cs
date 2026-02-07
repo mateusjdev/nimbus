@@ -23,7 +23,7 @@ namespace Nimbus
 
         private bool FlagScreenSize = false;
         private bool FlagExit = false;
-        private bool FlagRequestDraw = false;
+        private bool FlagRequestRender = false;
 
         private LinkedList<IPainel> painelStack = new();
         private Queue<Event> eventQueue = new();
@@ -51,7 +51,7 @@ namespace Nimbus
                 return;
             }
 
-            FlagRequestDraw = true;
+            FlagRequestRender = true;
             ConsoleWidth = consoleWidth;
             ConsoleHeight = consoleHeight;
 
@@ -107,7 +107,7 @@ namespace Nimbus
                 eventQueue.Enqueue(mEvent);
             }
 
-            FlagRequestDraw = true;
+            FlagRequestRender = true;
         }
 
         private void OnEvent()
@@ -121,7 +121,7 @@ namespace Nimbus
                         {
                             var novoPainel = new PainelMachinesTree();
                             painelStack.AddLast(novoPainel);
-                            FlagRequestDraw = true;
+                            FlagRequestRender = true;
                         }
                         break;
                     case EventType.OpenCommandSelector:
@@ -133,7 +133,7 @@ namespace Nimbus
 
                             var extra = (ExtraCommandTargetList)mEvent.Extra;
 
-                            var novoPainel = new PainelCommandSelector<CommandType>("Seletor de Comando");
+                            var novoPainel = new PSelectPrompt<CommandType>("Seletor de Comando");
                             novoPainel
                                 .AddOption("Desligar", CommandType.Shutdown)
                                 .AddOption("Reiniciar", CommandType.Reboot)
@@ -151,11 +151,11 @@ namespace Nimbus
                                         cmdExec.AddTarget(new CommandTarget { IP = item.IP, DomainName = item.Name });
                                     }
 
-                                    cmdExec.Execute();
+                                    _ = cmdExec.Execute();
                                 });
 
                             painelStack.AddLast(novoPainel);
-                            FlagRequestDraw = true;
+                            FlagRequestRender = true;
                         }
                         break;
                     case EventType.ClosePanel:
@@ -165,7 +165,7 @@ namespace Nimbus
                             {
                                 FlagExit = true;
                             }
-                            FlagRequestDraw = true;
+                            FlagRequestRender = true;
                         }
                         break;
                 }
@@ -194,10 +194,10 @@ namespace Nimbus
                     break;
                 }
 
-                if (FlagRequestDraw)
+                if (FlagRequestRender)
                 {
                     Render();
-                    FlagRequestDraw = false;
+                    FlagRequestRender = false;
                 }
 
                 Thread.Sleep(UpdateIntervalMilisseconds);
@@ -213,7 +213,7 @@ namespace Nimbus
             Layout layoutMain = new Layout("Main");
 
             var controls = PainelFocado.RenderControls();
-            if (PainelFocado.RequestFullScreen || painelStack.Count <= 1)
+            if (PainelFocado.RenderOptionFullScreen || painelStack.Count <= 1)
             {
                 if (controls != null)
                 {
