@@ -18,7 +18,7 @@ namespace Nimbus.Painel
             Event? mEvent = null;
             if (key == ConsoleKey.Escape)
             {
-                mEvent = Event.ClosePanel;
+                mEvent = new Event(EventType.ClosePanel);
             }
 
             return mEvent;

@@ -102,9 +102,9 @@ namespace Nimbus
             var key = Console.ReadKey().Key;
 
             var mEvent = PainelFocado.HandleInput(key);
-            if (mEvent.HasValue)
+            if (mEvent != null)
             {
-                eventQueue.Enqueue(mEvent.Value);
+                eventQueue.Enqueue(mEvent);
             }
 
             FlagRequestDraw = true;
@@ -115,23 +115,23 @@ namespace Nimbus
             while (eventQueue.Count > 0)
             {
                 var mEvent = eventQueue.Dequeue();
-                switch (mEvent)
+                switch (mEvent.Type)
                 {
-                    case Event.OpenPing:
+                    case EventType.OpenPing:
                         {
                             var novoPainel = new PainelPing();
                             painelStack.AddLast(novoPainel);
                             FlagRequestDraw = true;
                         }
                         break;
-                    case Event.OpenMachineTree:
+                    case EventType.OpenMachineTree:
                         {
                             var novoPainel = new PainelMachinesTree();
                             painelStack.AddLast(novoPainel);
                             FlagRequestDraw = true;
                         }
                         break;
-                    case Event.ClosePanel:
+                    case EventType.ClosePanel:
                         {
                             painelStack.RemoveLast();
                             if (painelStack.Count <= 0)

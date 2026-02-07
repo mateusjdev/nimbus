@@ -1,4 +1,5 @@
 ﻿using Nimbus.Misc;
+using Nimbus.Painel.MachineTree;
 using Spectre.Console;
 using Spectre.Console.Rendering;
 using System;
@@ -380,6 +381,7 @@ namespace Nimbus.Painel
 
         internal PainelMachinesTree()
         {
+            // MachineTreeDisplayFolder("root", "/root/");
             root = new TreeItemFolder("root", "/root/");
 
             var room1 = new TreeItemFolder("room1", "/root/room1/");
@@ -423,7 +425,7 @@ namespace Nimbus.Painel
             switch (key)
             {
                 case ConsoleKey.Escape:
-                    mEvent = Event.ClosePanel;
+                    mEvent = new Event(EventType.ClosePanel);
                     break;
                 case ConsoleKey.UpArrow:
                     MoveSelectUp();
@@ -444,11 +446,13 @@ namespace Nimbus.Painel
                     root.SetSelected(true);
                     break;
                 case ConsoleKey.C:
+                    mEvent = new CommandEvent(EventType.OpenCommandPanel);
+                    GetSelected();
                     break;
                 case ConsoleKey.E:
                     break;
                 case ConsoleKey.P:
-                    mEvent = Event.OpenPing;
+                    mEvent = new Event(EventType.OpenPing);
                     break;
             }
             return mEvent;

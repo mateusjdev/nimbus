@@ -40,10 +40,10 @@ namespace Nimbus.Painel
                     switch (opcaoSelecionada)
                     {
                         case PainelInicialOpcoes.Ping:
-                            mEvent = Event.OpenPing;
+                            mEvent = new Event(EventType.OpenPing);
                             break;
                         case PainelInicialOpcoes.MachineTree:
-                            mEvent = Event.OpenMachineTree;
+                            mEvent = new Event(EventType.OpenMachineTree);
                             break;
                         default:
                             // mEvent = Event.None;
@@ -51,7 +51,7 @@ namespace Nimbus.Painel
                     }
                     break;
                 case ConsoleKey.Escape:
-                    mEvent = Event.ClosePanel;
+                    mEvent = new Event(EventType.ClosePanel);
                     break;
 
             }
