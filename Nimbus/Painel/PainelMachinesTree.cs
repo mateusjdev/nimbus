@@ -74,6 +74,8 @@ namespace Nimbus.Painel
         public bool MoveSelectDown();
 
         public void Toggle();
+
+        public void ToggleAll(bool value);
     }
 
 
@@ -120,6 +122,27 @@ namespace Nimbus.Painel
                     isSelected = 0;
                     isOpened = !isOpened;
                 }
+            }
+        }
+
+        public void ToggleAll(bool value)
+        {
+            isOpened = value;
+
+            foreach (var item in items)
+            {
+                item.ToggleAll(value);
+            }
+
+            if (!value)
+            {
+                if (isSelected > 0)
+                {
+                    var el = items.ElementAt(isSelected - 1);
+                    el.SetSelected(false);
+                }
+
+                SetSelected(false);
             }
         }
 
@@ -290,6 +313,8 @@ namespace Nimbus.Painel
 
         public void Toggle() { }
 
+        public void ToggleAll(bool value) { }
+
         public bool MoveSelectUp()
         {
             return true;
@@ -411,6 +436,15 @@ namespace Nimbus.Painel
                 case ConsoleKey.Spacebar:
                     root.Toggle();
                     break;
+                case ConsoleKey.A:
+                    root.ToggleAll(true);
+                    break;
+                case ConsoleKey.F:
+                    root.ToggleAll(false);
+                    root.SetSelected(true);
+                    break;
+                case ConsoleKey.C:
+                    break;
                 case ConsoleKey.E:
                     break;
                 case ConsoleKey.P:
@@ -474,7 +508,16 @@ namespace Nimbus.Painel
 
         public IRenderable? RenderControls()
         {
-            return new Text("[Esc] Voltar [Espaço] Alternar [e] Editar [p] Ping", new Style(Color.Purple));
+            StringBuilder str = new();
+            str.Append("[Esc] Voltar ");
+            str.Append("[Espaço] Alternar ");
+            str.Append("[e] Editar ");
+            str.Append("[p] Ping ");
+            str.Append("[c] Comandos ");
+            str.Append("[A] Abrir ");
+            str.Append("[F] Fechar ");
+
+            return new Text(str.ToString(), new Style(Color.Purple));
         }
     }
 }
