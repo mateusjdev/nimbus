@@ -9,30 +9,44 @@ using System.Threading.Tasks;
 
 namespace Nimbus.Painel
 {
-    internal struct PainelSelecionOptions
+    internal struct PainelSelecionOptions<T>
     {
         internal string Text;
-        internal int Value;
+        internal T Value;
     }
 
-    internal class PainelCommandSelector : IPainel
+    internal class PainelCommandSelector<T> : IPainel
     {
-        internal List<PainelSelecionOptions> options = new();
+        internal List<PainelSelecionOptions<T>> options = new();
+
+        private string PanelName;
+
+        private Action? OnSelect;
+
+        internal PainelCommandSelector(string panelName)
+        {
+            PanelName = panelName;
+        }
+
         private int OpSelecionada = 0;
         private int OpCount { get { return options.Count; } }
 
-        internal PainelCommandSelector()
+        public PainelCommandSelector<T> AddOption(string text, T value)
         {
-            AddOption(new PainelSelecionOptions { Text = "Desligar", Value = (int)CommandType.Shutdown });
-            AddOption(new PainelSelecionOptions { Text = "Reiniciar", Value = (int)CommandType.Reboot });
-            AddOption(new PainelSelecionOptions { Text = "Acordar via RDP", Value = (int)CommandType.WakeUp });
-            AddOption(new PainelSelecionOptions { Text = "Ping", Value = (int)CommandType.Ping });
-            AddOption(new PainelSelecionOptions { Text = "Customizado", Value = (int)CommandType.Shell });
+            PainelSelecionOptions<T> op = new();
+            options.Add(new PainelSelecionOptions<T> { Text = text, Value = value });
+            return this;
         }
 
-        public void AddOption(PainelSelecionOptions option)
+        public T GetSelected()
         {
-            options.Add(option);
+            // TODO: Check bounds
+            return options.ElementAt(OpSelecionada).Value;
+        }
+
+        public void SetOnSelect(Action action)
+        {
+            OnSelect = action;
         }
 
         public bool RequestFullScreen { get { return false; } }
@@ -57,6 +71,10 @@ namespace Nimbus.Painel
                     }
                     break;
                 case ConsoleKey.Enter:
+                    // TODO: Validate values (Ensure Non Integers
+                    // Confirm
+                    // Open Comand Executor
+                    OnSelect?.Invoke();
                     break;
                 case ConsoleKey.Escape:
                     mEvent = new Event(EventType.ClosePanel);
@@ -87,7 +105,7 @@ namespace Nimbus.Painel
 
             var iRows = new Rows(rows);
             var panel = new Panel(iRows)
-                .Header("Seletor de Comando")
+                .Header(PanelName)
                 .HeaderAlignment(Justify.Center)
                 .Border(BoxBorder.Rounded)
                 .BorderColor(Color.Purple)

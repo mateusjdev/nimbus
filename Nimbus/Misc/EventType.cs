@@ -12,7 +12,7 @@ namespace Nimbus.Misc
         ClosePanel,
         OpenMachineTree,
         OpenCommandSelector,
-        SendCommand
+        ExecuteCommand
     }
 
     internal interface IEventExtra;
@@ -29,11 +29,11 @@ namespace Nimbus.Misc
         }
     }
 
-    internal class CommandTargetList : IEventExtra
+    internal class ExtraCommandTargetList : IEventExtra
     {
         public MachineTreeElement[] Targets { get; private set; }
 
-        internal CommandTargetList(MachineTreeElement[] targets)
+        internal ExtraCommandTargetList(MachineTreeElement[] targets)
         {
             Targets = targets;
         }

@@ -462,7 +462,7 @@ namespace Nimbus.Painel
                 case ConsoleKey.C:
                     mEvent = new Event(
                         EventType.OpenCommandSelector,
-                        new CommandTargetList(root.GetSelectedTree(true))
+                        new ExtraCommandTargetList(root.GetSelectedTree(true))
                         );
                     break;
                 case ConsoleKey.E:
@@ -470,7 +470,7 @@ namespace Nimbus.Painel
                 case ConsoleKey.P:
                     mEvent = new Event(
                         EventType.OpenCommandSelector,
-                        new CommandTargetList(root.GetSelectedTree(false))
+                        new ExtraCommandTargetList(root.GetSelectedTree(false))
                         );
                     break;
             }

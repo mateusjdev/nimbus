@@ -126,7 +126,33 @@ namespace Nimbus
                         break;
                     case EventType.OpenCommandSelector:
                         {
-                            var novoPainel = new PainelCommandSelector();
+                            if (mEvent.Extra is not ExtraCommandTargetList)
+                            {
+                                throw new Exception("OpenCommandSelector: Extra is null");
+                            }
+
+                            var extra = (ExtraCommandTargetList)mEvent.Extra;
+
+                            var novoPainel = new PainelCommandSelector<CommandType>("Seletor de Comando");
+                            novoPainel
+                                .AddOption("Desligar", CommandType.Shutdown)
+                                .AddOption("Reiniciar", CommandType.Reboot)
+                                .AddOption("Acordar via RDP", CommandType.WakeUp)
+                                .AddOption("Ping", CommandType.Ping)
+                                .AddOption("Customizado", CommandType.Shell)
+                                .SetOnSelect(() =>
+                                {
+                                    var selected = novoPainel.GetSelected();
+                                    var cmdExec = new CommandExecutor(selected, []);
+
+                                    foreach (var item in extra.Targets)
+                                    {
+                                        cmdExec.AddTarget(new CommandTarget { IP = item.IP, DomainName = item.Name });
+                                    }
+
+                                    cmdExec.Execute();
+                                });
+
                             painelStack.AddLast(novoPainel);
                             FlagRequestDraw = true;
                         }
