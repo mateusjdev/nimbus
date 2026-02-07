@@ -139,6 +139,7 @@ namespace Nimbus
                                 .AddOption("Reiniciar", CommandType.Reboot)
                                 .AddOption("Acordar via RDP", CommandType.WakeUp)
                                 .AddOption("Ping", CommandType.Ping)
+                                .AddOption("Mensagem", CommandType.Message)
                                 .AddOption("Customizado", CommandType.Shell)
                                 .SetOnSelect(() =>
                                 {

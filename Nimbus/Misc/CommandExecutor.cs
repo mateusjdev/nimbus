@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -13,6 +14,7 @@ namespace Nimbus.Misc
         Reboot, // Reiniciar
         WakeUp, // Acordar vie RDP (TCP - Porta 3389)
         Shell, // cmd or powershell command
+        Message, // cmd msg.exe
 
         // TODO: PainelPing -> PainelCommand
         Ping, // Ping
@@ -28,7 +30,7 @@ namespace Nimbus.Misc
     internal struct CommandTarget
     {
         // TODO: IPv6 support
-        internal UInt32 IP;
+        internal IPAddress IP;
         internal string DomainName;
     }
 
@@ -114,6 +116,14 @@ namespace Nimbus.Misc
                     for (int i = 0; i < count; i++)
                     {
                         tasks.Add(Ping(commandTargets[i].IP));
+                        Console.WriteLine("Teste");
+                    }
+                    break;
+                case CommandType.Message:
+                    for (int i = 0; i < count; i++)
+                    {
+                        tasks.Add(Message(commandTargets[i].IP, "Hello World"));
+                        Console.WriteLine("Teste");
                     }
                     break;
             }
@@ -125,59 +135,44 @@ namespace Nimbus.Misc
             return tasksResults;
         }
 
-        private async Task<int> Shutdown(UInt32 ip)
+        private async Task<int> Shutdown(IPAddress ip)
         {
             await Task.Delay(1000);
             return 0;
         }
 
-        private async Task<int> Reboot(UInt32 ip)
+        private async Task<int> Reboot(IPAddress ip)
         {
             await Task.Delay(1000);
             return 0;
         }
 
-        private async Task<int> WakeUp(UInt32 ip)
+        private async Task<int> WakeUp(IPAddress ip)
         {
             await Task.Delay(1000);
             return 0;
         }
 
-        private async Task<int> Shell(UInt32 ip)
+        private async Task<int> Shell(IPAddress ip)
         {
             await Task.Delay(1000);
             return 0;
         }
 
-        private async Task<int> Ping(UInt32 ip)
+        private async Task<int> Ping(IPAddress ip)
+        {
+            await Task.Delay(1000);
+            return 0;
+        }
+
+        private async Task<int> Message(IPAddress ip, string message)
         {
             ProcessStartInfo startInfo = new ProcessStartInfo
             {
                 FileName = "cmd.exe",
                 // /c tells cmd to run the command and then terminate
-                Arguments = $"/c msg %username% ${ip}",
-                UseShellExecute = false,
-                CreateNoWindow = true // Runs it hidden in the background
-            };
-
-            var process = Process.Start(startInfo);
-
-            if (process == null)
-            {
-                return -1;
-            }
-
-            await process.WaitForExitAsync();
-            return process.ExitCode;
-        }
-
-        private async Task<int> Message(UInt32 ip, string message)
-        {
-            ProcessStartInfo startInfo = new ProcessStartInfo
-            {
-                FileName = "cmd.exe",
-                // /c tells cmd to run the command and then terminate
-                Arguments = $"/c msg %username% ${ip}",
+                // $"msg * /server:{ip} {message}"
+                Arguments = $"/c msg %username% {ip} : {message}",
                 UseShellExecute = false,
                 CreateNoWindow = true // Runs it hidden in the background
             };
