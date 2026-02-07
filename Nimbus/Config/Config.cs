@@ -4,10 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Nimbus.Painel
+namespace Nimbus.Config
 {
-    internal class PainelCommandExecutor
+    internal static class Config
     {
-
+        internal const int UpdateIntervalMilliseconds = 100;
     }
 }

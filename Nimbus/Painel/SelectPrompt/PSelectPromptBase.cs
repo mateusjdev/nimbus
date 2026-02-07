@@ -1,5 +1,5 @@
 ﻿using Nimbus.Config;
-using Nimbus.Misc;
+using Nimbus.Event;
 using Spectre.Console;
 using Spectre.Console.Rendering;
 using System;
@@ -8,46 +8,33 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Nimbus.Painel
+namespace Nimbus.Painel.SelectPrompt
 {
 
-    internal class PSelectPrompt<T> : IPainel where T : Enum
+    internal abstract class PSelectPromptBase<T> : PainelBase where T : Enum
     {
         #region private
 
-        private struct PTreeOption
+        protected struct PTreeOption
         {
             internal string Text;
             internal T Value;
             internal bool Confirm;
         }
 
-        private readonly List<PTreeOption> options = [];
+        protected readonly List<PTreeOption> options = [];
 
-        private readonly string PanelName;
+        protected int OpSelecionada = 0;
 
-        private Action? OnSelect;
-
-        private int OpSelecionada = 0;
-
-        private int OpCount { get { return options.Count; } }
+        protected int OpCount { get { return options.Count; } }
 
         #endregion private
 
         #region public
 
-        internal PSelectPrompt(string panelName)
-        {
-            PanelName = panelName;
-        }
+        internal PSelectPromptBase(EventPublisher ep, string panelName) : base(ep, panelName) { }
 
-        internal PSelectPrompt<T> AddOption(string text, T value, bool confirm = false)
-        {
-            options.Add(new PTreeOption { Text = text, Value = value, Confirm = confirm });
-            return this;
-        }
-
-        internal T? GetSelected()
+        protected T? GetSelected()
         {
             if (options.Count == 0)
             {
@@ -58,20 +45,17 @@ namespace Nimbus.Painel
             return options.ElementAt(OpSelecionada).Value;
         }
 
-        internal void SetOnSelect(Action action)
+        protected void AddOption(string text, T value, bool confirm = false)
         {
-            OnSelect = action;
+            options.Add(new PTreeOption { Text = text, Value = value, Confirm = confirm });
         }
 
         #endregion public
 
         #region interface
 
-        public bool RenderOptionFullScreen { get { return false; } }
-
-        public Event? HandleInput(ConsoleKey key)
+        internal override void HandleInput(ConsoleKey key)
         {
-            Event? mEvent = null;
             switch (key)
             {
                 case ConsoleKey.UpArrow:
@@ -80,7 +64,7 @@ namespace Nimbus.Painel
                     {
                         OpSelecionada = OpCount;
                     }
-                    mEvent = new Event(EventType.None, flagRequestRender: true);
+                    eventPublisher(new EventData(EventType.RequestRender));
                     break;
                 case ConsoleKey.DownArrow:
                     OpSelecionada++;
@@ -88,24 +72,21 @@ namespace Nimbus.Painel
                     {
                         OpSelecionada = 0;
                     }
-                    mEvent = new Event(EventType.None, flagRequestRender: true);
+                    eventPublisher(new EventData(EventType.RequestRender));
                     break;
                 case ConsoleKey.Enter:
-                    if (options.ElementAt(OpSelecionada).Confirm)
-                    {
-                        // TODO: Prompt Confirm
-                    }
-                    OnSelect?.Invoke();
-                    mEvent = new Event(EventType.None, flagRequestRender: true);
+                    // TODO: Prompt Confirm
+                    // if (options.ElementAt(OpSelecionada).Confirm)
+                    eventPublisher(new EventData(EventType.RequestRender));
                     break;
                 case ConsoleKey.Escape:
-                    mEvent = new Event(EventType.ClosePanel, flagRequestRender: true);
+                    eventPublisher(new EventData(EventType.ClosePanel));
+                    eventPublisher(new EventData(EventType.RequestRender));
                     break;
             }
-            return mEvent;
         }
 
-        public IRenderable Render()
+        internal override IRenderable Render()
         {
             List<Text> rows = [];
             var selectedStyle = new Style(foreground: Theme.SelectedItemColor);
@@ -134,7 +115,7 @@ namespace Nimbus.Painel
             return panel;
         }
 
-        public IRenderable RenderControls()
+        internal override IRenderable RenderControls()
         {
             return new Text("[Esc] Voltar [Enter] Selecionar", new Style(Theme.ControlsTextColor));
         }

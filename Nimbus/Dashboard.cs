@@ -1,5 +1,7 @@
-﻿using Nimbus.Misc;
+﻿using Nimbus.Event;
+using Nimbus.Misc;
 using Nimbus.Painel;
+using Nimbus.Painel.SelectPrompt;
 using Spectre.Console;
 using Spectre.Console.Rendering;
 using System;
@@ -25,150 +27,117 @@ namespace Nimbus
         private bool FlagExit = false;
         private bool FlagRequestRender = false;
 
-        private LinkedList<IPainel> painelStack = new();
-        private Queue<Event> eventQueue = new();
+        private readonly LinkedList<PainelBase> painelStack = new();
 
-        private const int UpdateIntervalMilisseconds = 100;
+        private readonly EventController eventController = new();
 
-        private IPainel PainelFocado
+        private PainelBase PainelFocado
         {
             get { return painelStack.Last(); }
         }
 
         internal Dashboard()
         {
-            painelStack.AddLast(new PainelInicial());
+            eventController.OnEvent += OnEvent;
+            eventController.OnInput += OnInput;
+            var painelInicial = new PSelectPrompStart(eventController.EventPublisher);
+            painelStack.AddLast(painelInicial);
         }
 
-        private void OnSizeUpdate()
+        private void OnInput(object? e, ConsoleKey key)
         {
-            var consoleWidth = AnsiConsole.Console.Profile.Width;
-            var consoleHeight = AnsiConsole.Console.Profile.Height;
-
-            var sizeUpdated = consoleWidth != ConsoleWidth || consoleHeight != ConsoleHeight;
-            if (!sizeUpdated)
-            {
-                return;
-            }
-
+            PainelFocado.HandleInput(key);
             FlagRequestRender = true;
-            ConsoleWidth = consoleWidth;
-            ConsoleHeight = consoleHeight;
+        }
 
-            var flagScreenSize = ConsoleWidth < MinWidth || ConsoleHeight < MinHeight;
-            var flagScreenSizeToggled = flagScreenSize != FlagScreenSize;
-            if (!flagScreenSizeToggled)
+        private void OnEvent(object? e, EventData eventData)
+        {
+            switch (eventData.Type)
             {
-                if (FlagScreenSize)
-                {
-                    var alerta = PainelFocado;
-                    if (alerta is PainelAlerta)
+                case EventType.GeometryChange:
                     {
-                        ((PainelAlerta)alerta).ChangeText(
-                            $"Tamanho da janela deve ser maior que 80x24! ({consoleWidth}x{consoleHeight})"
-                            );
-                    }
-                }
+                        FlagRequestRender = true;
 
-                return;
-            }
-
-            FlagScreenSize = flagScreenSize;
-            if (flagScreenSize)
-            {
-                // Criar Alerta
-
-                var painelAlerta = new PainelAlerta(
-                    TipoAlerta.Error,
-                    $"Tamanho da janela deve ser maior que 80x24! ({consoleWidth}x{consoleHeight})"
-                    );
-                painelStack.AddLast(painelAlerta);
-            }
-            else
-            {
-                // Remover Alerta
-                painelStack.RemoveLast();
-            }
-
-        }
-
-        private void OnInput()
-        {
-            if (!Console.KeyAvailable)
-            {
-                return;
-            }
-
-            var key = Console.ReadKey().Key;
-
-            var mEvent = PainelFocado.HandleInput(key);
-            if (mEvent != null)
-            {
-                eventQueue.Enqueue(mEvent);
-            }
-
-            FlagRequestRender = true;
-        }
-
-        private void OnEvent()
-        {
-            while (eventQueue.Count > 0)
-            {
-                var mEvent = eventQueue.Dequeue();
-                switch (mEvent.Type)
-                {
-                    case EventType.OpenMachineTree:
+                        var flagScreenSize = ConsoleWidth < MinWidth || ConsoleHeight < MinHeight;
+                        var flagScreenSizeToggled = flagScreenSize != FlagScreenSize;
+                        if (!flagScreenSizeToggled)
                         {
-                            var novoPainel = new PainelMachinesTree();
-                            painelStack.AddLast(novoPainel);
-                            FlagRequestRender = true;
-                        }
-                        break;
-                    case EventType.OpenCommandSelector:
-                        {
-                            if (mEvent.Extra is not ExtraCommandTargetList)
+                            if (FlagScreenSize)
                             {
-                                throw new Exception("OpenCommandSelector: Extra is null");
-                            }
-
-                            var extra = (ExtraCommandTargetList)mEvent.Extra;
-
-                            var novoPainel = new PSelectPrompt<CommandType>("Seletor de Comando");
-                            novoPainel
-                                .AddOption("Desligar", CommandType.Shutdown)
-                                .AddOption("Reiniciar", CommandType.Reboot)
-                                .AddOption("Acordar via RDP", CommandType.WakeUp)
-                                .AddOption("Ping", CommandType.Ping)
-                                .AddOption("Mensagem", CommandType.Message)
-                                .AddOption("Customizado", CommandType.Shell)
-                                .SetOnSelect(() =>
+                                var alerta = PainelFocado;
+                                if (alerta is PainelAlerta)
                                 {
-                                    var selected = novoPainel.GetSelected();
-                                    var cmdExec = new CommandExecutor(selected, []);
-
-                                    foreach (var item in extra.Targets)
-                                    {
-                                        cmdExec.AddTarget(new CommandTarget { IP = item.IP, DomainName = item.Name });
-                                    }
-
-                                    _ = cmdExec.Execute();
-                                });
-
-                            painelStack.AddLast(novoPainel);
-                            FlagRequestRender = true;
-                        }
-                        break;
-                    case EventType.ClosePanel:
-                        {
-                            painelStack.RemoveLast();
-                            if (painelStack.Count <= 0)
-                            {
-                                FlagExit = true;
+                                    ((PainelAlerta)alerta).ChangeText(
+                                        $"Tamanho da janela deve ser maior que 80x24! ({ConsoleWidth}x{ConsoleHeight})"
+                                        );
+                                }
                             }
-                            FlagRequestRender = true;
                         }
-                        break;
-                }
+                        else
+                        {
+                            FlagScreenSize = flagScreenSize;
+                            if (flagScreenSize)
+                            {
+                                // Criar Alerta
+                                var painelAlerta = new PainelAlerta(
+                                    eventController.EventPublisher,
+                                    TipoAlerta.Error,
+                                    $"Tamanho da janela deve ser maior que 80x24! ({ConsoleWidth}x{ConsoleHeight})"
+                                    );
+                                painelStack.AddLast(painelAlerta);
+                            }
+                            else
+                            {
+                                // Remover Alerta
+                                painelStack.RemoveLast();
+                            }
+                        }
+                    }
+                    break;
+                case EventType.OpenMachineTree:
+                    {
+                        var novoPainel = new PainelMachinesTree(eventController.EventPublisher);
+                        painelStack.AddLast(novoPainel);
+                        FlagRequestRender = true;
+                    }
+                    break;
+                case EventType.OpenCommandSelector:
+                    {
+                        if (eventData.Extra is not ExtraCommandTargetList)
+                        {
+                            throw new Exception("OpenCommandSelector: Extra is null");
+                        }
+                        /*
+                        var selected = novoPainel.GetSelected();
+                            var cmdExec = new CommandExecutor(selected, []);
+
+                            foreach (var item in extra.Targets)
+                            {
+                                cmdExec.AddTarget(new CommandTarget { IP = item.IP, DomainName = item.Name });
+                            }
+
+                            _ = cmdExec.Execute();
+
+                        var extra = (ExtraCommandTargetList)eventData.Extra;
+                        extra.Targets
+                        */
+                        var novoPainel = new PSelectPromptCommand(eventController.EventPublisher, []);
+                        painelStack.AddLast(novoPainel);
+                        FlagRequestRender = true;
+                    }
+                    break;
+                case EventType.ExecuteCommand:
+                    break;
+                case EventType.ClosePanel:
+                    {
+                        painelStack.RemoveLast();
+                        if (painelStack.Count <= 0)
+                        {
+                            FlagExit = true;
+                        }
+                        FlagRequestRender = true;
+                    }
+                    break;
             }
         }
 
@@ -180,13 +149,35 @@ namespace Nimbus
             AnsiConsole.Cursor.MoveLeft(10000);
         }
 
+        private void CheckInput()
+        {
+            if (Console.KeyAvailable)
+            {
+                eventController.PublishInput(Console.ReadKey().Key);
+            }
+        }
+
+        private void CheckGeometry()
+        {
+            var consoleWidth = AnsiConsole.Console.Profile.Width;
+            var consoleHeight = AnsiConsole.Console.Profile.Height;
+
+            // if (sizeUpdated)
+            if (consoleWidth != ConsoleWidth || consoleHeight != ConsoleHeight)
+            {
+                ConsoleWidth = consoleWidth;
+                ConsoleHeight = consoleHeight;
+
+                eventController.PublishEvent(new EventData(EventType.GeometryChange));
+            }
+        }
+
         public void Start()
         {
             while (true)
             {
-                OnSizeUpdate();
-                OnInput();
-                OnEvent();
+                CheckInput();
+                CheckGeometry();
 
                 if (FlagExit)
                 {
@@ -200,7 +191,7 @@ namespace Nimbus
                     FlagRequestRender = false;
                 }
 
-                Thread.Sleep(UpdateIntervalMilisseconds);
+                Thread.Sleep(Config.Config.UpdateIntervalMilliseconds);
             }
         }
 
@@ -208,9 +199,9 @@ namespace Nimbus
         {
             int minSelecaoWidth = 30;
 
-            Layout layout = new Layout("Root");
-            Layout layoutContent = new Layout("Content");
-            Layout layoutMain = new Layout("Main");
+            var layout = new Layout("Root");
+            var layoutContent = new Layout("Content");
+            var layoutMain = new Layout("Main");
 
             var controls = PainelFocado.RenderControls();
             if (PainelFocado.RenderOptionFullScreen || painelStack.Count <= 1)
@@ -257,8 +248,11 @@ namespace Nimbus
                 }
 
                 // TODO: Fix possible nullable
-                var beforeLast = painelStack.Last.Previous.Value.Render();
-                layout["History"].Update(beforeLast);
+                var beforeLast = painelStack.Last?.Previous?.Value.Render();
+                if (beforeLast != null)
+                {
+                    layout["History"].Update(beforeLast);
+                }
             }
 
             var menuInicial = PainelFocado.Render();

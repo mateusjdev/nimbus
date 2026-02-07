@@ -27,24 +27,25 @@ namespace Nimbus.Misc
         Finished
     }
 
-    internal struct CommandTarget
+    internal struct Machine
     {
         // TODO: IPv6 support
-        internal IPAddress IP;
-        internal string DomainName;
+        internal IPAddress? IpAddress { get; }
+
+        internal string? DomainName { get; }
     }
 
     internal class CommandExecutor
     {
-        private CommandType commandType;
+        private readonly CommandType commandType;
 
-        private List<CommandTarget> commandTargets = new();
+        private readonly List<Machine> commandTargets = [];
 
         public bool HasDisplay { get; private set; }
 
         public CommandStatus Status { get; private set; }
 
-        internal CommandExecutor(CommandType tipo, CommandTarget[] targets)
+        internal CommandExecutor(CommandType tipo, Machine[] targets)
         {
             commandType = tipo;
             commandTargets.AddRange(targets);
@@ -64,7 +65,7 @@ namespace Nimbus.Misc
             }
         }
 
-        internal void AddTarget(CommandTarget target)
+        internal void AddTarget(Machine target)
         {
             if (Status != CommandStatus.Waiting)
             {
@@ -91,38 +92,38 @@ namespace Nimbus.Misc
                 case CommandType.Shutdown:
                     for (int i = 0; i < count; i++)
                     {
-                        tasks.Add(Shutdown(commandTargets[i].IP));
+                        tasks.Add(Shutdown(commandTargets[i]));
                     }
                     break;
                 case CommandType.Reboot:
                     for (int i = 0; i < count; i++)
                     {
-                        tasks.Add(Reboot(commandTargets[i].IP));
+                        tasks.Add(Reboot(commandTargets[i]));
                     }
                     break;
                 case CommandType.WakeUp:
                     for (int i = 0; i < count; i++)
                     {
-                        tasks.Add(WakeUp(commandTargets[i].IP));
+                        tasks.Add(WakeUp(commandTargets[i]));
                     }
                     break;
                 case CommandType.Shell:
                     for (int i = 0; i < count; i++)
                     {
-                        tasks.Add(Shell(commandTargets[i].IP));
+                        tasks.Add(Shell(commandTargets[i]));
                     }
                     break;
                 case CommandType.Ping:
                     for (int i = 0; i < count; i++)
                     {
-                        tasks.Add(Ping(commandTargets[i].IP));
+                        tasks.Add(Ping(commandTargets[i]));
                         Console.WriteLine("Teste");
                     }
                     break;
                 case CommandType.Message:
                     for (int i = 0; i < count; i++)
                     {
-                        tasks.Add(Message(commandTargets[i].IP, "Hello World"));
+                        tasks.Add(Message(commandTargets[i], "Hello World"));
                         Console.WriteLine("Teste");
                     }
                     break;
@@ -135,44 +136,50 @@ namespace Nimbus.Misc
             return tasksResults;
         }
 
-        private async Task<int> Shutdown(IPAddress ip)
+        private async static Task<int> Shutdown(Machine machine)
         {
             await Task.Delay(1000);
             return 0;
         }
 
-        private async Task<int> Reboot(IPAddress ip)
+        private async static Task<int> Reboot(Machine machine)
         {
             await Task.Delay(1000);
             return 0;
         }
 
-        private async Task<int> WakeUp(IPAddress ip)
+        private async static Task<int> WakeUp(Machine machine)
         {
             await Task.Delay(1000);
             return 0;
         }
 
-        private async Task<int> Shell(IPAddress ip)
+        private async static Task<int> Shell(Machine machine)
         {
             await Task.Delay(1000);
             return 0;
         }
 
-        private async Task<int> Ping(IPAddress ip)
+        private async static Task<int> Ping(Machine machine)
         {
             await Task.Delay(1000);
             return 0;
         }
 
-        private async Task<int> Message(IPAddress ip, string message)
+        private async static Task<int> Message(Machine machine, string message)
         {
+            var IpAddress = await ResolveDomainName(machine);
+            if (IpAddress == null)
+            {
+                return -1; // TODO: Return error
+            }
+
             ProcessStartInfo startInfo = new ProcessStartInfo
             {
                 FileName = "cmd.exe",
                 // /c tells cmd to run the command and then terminate
                 // $"msg * /server:{ip} {message}"
-                Arguments = $"/c msg %username% {ip} : {message}",
+                Arguments = $"/c msg %username% {IpAddress} : {message}",
                 UseShellExecute = false,
                 CreateNoWindow = true // Runs it hidden in the background
             };
@@ -186,6 +193,24 @@ namespace Nimbus.Misc
 
             await process.WaitForExitAsync();
             return process.ExitCode;
+        }
+
+        private async static Task<IPAddress?> ResolveDomainName(Machine machine)
+        {
+            IPAddress? IpAddress = null;
+            if (machine.IpAddress != null)
+            {
+                IpAddress = machine.IpAddress;
+            }
+            else if (machine.DomainName != null)
+            {
+                var addresses = await Dns.GetHostAddressesAsync(machine.DomainName);
+                if (addresses.Length > 0)
+                {
+                    IpAddress = addresses[0];
+                }
+            }
+            return IpAddress;
         }
     }
 }

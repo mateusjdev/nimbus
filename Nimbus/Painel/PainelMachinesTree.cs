@@ -1,5 +1,5 @@
 ﻿using Nimbus.Config;
-using Nimbus.Misc;
+using Nimbus.Event;
 using Nimbus.Painel.MachineTree;
 using Spectre.Console;
 using Spectre.Console.Rendering;
@@ -380,11 +380,11 @@ namespace Nimbus.Painel
         }
     }
 
-    internal class PainelMachinesTree : IPainel
+    internal sealed class PainelMachinesTree : PainelBase
     {
         TreeItemFolder root;
 
-        internal PainelMachinesTree()
+        internal PainelMachinesTree(EventPublisher ep) : base(ep)
         {
             // MachineTreeDisplayFolder("root", "/root/");
             root = new TreeItemFolder(new MachineTreeElement("root", "/root/"));
@@ -423,15 +423,12 @@ namespace Nimbus.Painel
             root.SetSelected(true);
         }
 
-        public bool RenderOptionFullScreen { get { return false; } }
-
-        public Event? HandleInput(ConsoleKey key)
+        internal override void HandleInput(ConsoleKey key)
         {
-            Event? mEvent = null;
             switch (key)
             {
                 case ConsoleKey.Escape:
-                    mEvent = new Event(EventType.ClosePanel);
+                    eventPublisher(new EventData(EventType.ClosePanel));
                     break;
                 case ConsoleKey.UpArrow:
                     MoveSelectUp();
@@ -452,21 +449,22 @@ namespace Nimbus.Painel
                     root.SetSelected(true);
                     break;
                 case ConsoleKey.C:
-                    mEvent = new Event(
+                    var machines = root.GetSelectedTree(true);
+                    eventPublisher(new EventData(
                         EventType.OpenCommandSelector,
-                        new ExtraCommandTargetList(root.GetSelectedTree(true))
-                        );
+                        new ExtraCommandTargetList()
+                        ));
                     break;
                 case ConsoleKey.E:
                     break;
                 case ConsoleKey.P:
-                    mEvent = new Event(
-                        EventType.OpenCommandSelector,
-                        new ExtraCommandTargetList(root.GetSelectedTree(false))
-                        );
+                    var machines = root.GetSelectedTree(false);
+                    eventPublisher(new EventData(
+                        EventType.ExecuteCommand,
+                        new ExtraCommandTargetList()
+                        ));
                     break;
             }
-            return mEvent;
         }
 
         private void MoveSelectUp()
@@ -497,7 +495,7 @@ namespace Nimbus.Painel
             }
         }
 
-        public IRenderable Render()
+        internal override IRenderable Render()
         {
             /*
             var tree = new Tree("Root");
@@ -521,7 +519,7 @@ namespace Nimbus.Painel
             return panel;
         }
 
-        public IRenderable? RenderControls()
+        internal override IRenderable? RenderControls()
         {
             StringBuilder str = new();
             str.Append("[Esc] Voltar ");

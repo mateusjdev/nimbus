@@ -1,4 +1,4 @@
-﻿using Nimbus.Misc;
+﻿using Nimbus.Event;
 using Spectre.Console;
 using Spectre.Console.Extensions;
 using Spectre.Console.Rendering;
@@ -11,23 +11,19 @@ using System.Threading.Tasks;
 
 namespace Nimbus.Painel
 {
-
     internal enum TipoAlerta
     {
         Error,
         Information,
     }
 
-    internal class PainelAlerta : IPainel
+    internal class PainelAlerta : PainelBase
     {
-        private StringBuilder str = new();
-
+        private readonly StringBuilder str = new();
         private Color borderColor = Color.White;
-        private TipoAlerta tipoAlerta = TipoAlerta.Information;
+        private readonly TipoAlerta tipoAlerta;
 
-        public bool RenderOptionFullScreen { get { return true; } }
-
-        public PainelAlerta(TipoAlerta tipoAlerta, string msg)
+        public PainelAlerta(EventPublisher ec, TipoAlerta tipoAlerta, string msg) : base(ec, renderOptionFullScreen: true)
         {
             this.tipoAlerta = tipoAlerta;
             SetMarkup();
@@ -50,25 +46,23 @@ namespace Nimbus.Painel
             }
         }
 
-        public Event? HandleInput(ConsoleKey key)
-        {
-            return null;
-        }
+        internal override void HandleInput(ConsoleKey key) { }
 
-        public IRenderable Render()
+        internal override IRenderable Render()
         {
-            var text = new Markup(str.ToString())
-                { Justification = Justify.Center }
+            var text = new Markup(str.ToString()) { Justification = Justify.Center }
                 .Centered();
+
             var panel = new Panel(text)
                 .Header("Alerta")
                 .HeaderAlignment(Justify.Center)
                 .Border(BoxBorder.Rounded)
                 .BorderColor(borderColor);
+
             return Align.Center(panel, VerticalAlignment.Middle);
         }
 
-        public IRenderable? RenderControls()
+        internal override IRenderable? RenderControls()
         {
             return null;
         }
