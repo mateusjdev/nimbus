@@ -10,7 +10,7 @@ namespace Nimbus.Misc
     {
     }
 
-    internal enum CommandType
+    internal enum CommandType: int
     {
         Shutdown, // Desligar
         Reboot, // Reiniciar

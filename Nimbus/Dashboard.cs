@@ -117,16 +117,16 @@ namespace Nimbus
                 var mEvent = eventQueue.Dequeue();
                 switch (mEvent.Type)
                 {
-                    case EventType.OpenPing:
+                    case EventType.OpenMachineTree:
                         {
-                            var novoPainel = new PainelPing();
+                            var novoPainel = new PainelMachinesTree();
                             painelStack.AddLast(novoPainel);
                             FlagRequestDraw = true;
                         }
                         break;
-                    case EventType.OpenMachineTree:
+                    case EventType.OpenCommandSelector:
                         {
-                            var novoPainel = new PainelMachinesTree();
+                            var novoPainel = new PainelCommandSelector();
                             painelStack.AddLast(novoPainel);
                             FlagRequestDraw = true;
                         }

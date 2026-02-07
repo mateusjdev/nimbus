@@ -17,6 +17,7 @@ namespace Nimbus.Painel
 
         public bool RequestFullScreen { get { return false; } }
 
+        // TODO: Make a interface or base class for selecion panels (CommandSelector ...)
         public Event? HandleInput(ConsoleKey key)
         {
             Event? mEvent = null;
@@ -40,7 +41,8 @@ namespace Nimbus.Painel
                     switch (opcaoSelecionada)
                     {
                         case PainelInicialOpcoes.Ping:
-                            mEvent = new Event(EventType.OpenPing);
+                            // TODO: Replace with another screen
+                            mEvent = new Event(EventType.OpenMachineTree);
                             break;
                         case PainelInicialOpcoes.MachineTree:
                             mEvent = new Event(EventType.OpenMachineTree);

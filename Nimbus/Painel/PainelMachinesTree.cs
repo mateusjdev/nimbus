@@ -72,7 +72,7 @@ namespace Nimbus.Painel
 
         public void ToggleAll(bool value);
 
-        public MachineTreeElement[] GetSelectedTree();
+        public MachineTreeElement[] GetSelectedTree(bool recurse);
     }
 
 
@@ -282,12 +282,20 @@ namespace Nimbus.Painel
             isSelected = value ? 0 : -1;
         }
 
-        public MachineTreeElement[] GetSelectedTree()
+        public MachineTreeElement[] GetSelectedTree(bool recurse)
         {
             List<MachineTreeElement> mteList = [];
-            foreach (var item in items)
+            if (recurse)
             {
-                mteList.AddRange(item.GetSelectedTree());
+                foreach (var item in items)
+                {
+                    mteList.AddRange(item.GetSelectedTree(true));
+                }
+            }
+            else if (isSelected > 0)
+            {
+                var el = items.ElementAt(isSelected - 0);
+                mteList.AddRange(el.GetSelectedTree(false));
             }
 
             return [.. mteList];
@@ -374,7 +382,7 @@ namespace Nimbus.Painel
         }
 
 
-        public MachineTreeElement[] GetSelectedTree()
+        public MachineTreeElement[] GetSelectedTree(bool _)
         {
             return [Mtd];
         }
@@ -453,14 +461,17 @@ namespace Nimbus.Painel
                     break;
                 case ConsoleKey.C:
                     mEvent = new Event(
-                        EventType.OpenCommandPanel,
-                        new CommandTargetList(root.GetSelectedTree())
+                        EventType.OpenCommandSelector,
+                        new CommandTargetList(root.GetSelectedTree(true))
                         );
                     break;
                 case ConsoleKey.E:
                     break;
                 case ConsoleKey.P:
-                    mEvent = new Event(EventType.OpenPing);
+                    mEvent = new Event(
+                        EventType.OpenCommandSelector,
+                        new CommandTargetList(root.GetSelectedTree(false))
+                        );
                     break;
             }
             return mEvent;

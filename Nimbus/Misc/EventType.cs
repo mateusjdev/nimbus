@@ -10,27 +10,26 @@ namespace Nimbus.Misc
     internal enum EventType
     {
         ClosePanel,
-        OpenPing,
         OpenMachineTree,
-        OpenCommandPanel,
+        OpenCommandSelector,
         SendCommand
     }
 
-    internal interface EventExtra;
+    internal interface IEventExtra;
 
     internal class Event
     {
         public EventType Type { get; private set; }
-        public EventExtra? Extra { get; private set; }
+        public IEventExtra? Extra { get; private set; }
 
-        internal Event(EventType tipo, EventExtra? extra = null)
+        internal Event(EventType tipo, IEventExtra? extra = null)
         {
             Type = tipo;
             Extra = extra;
         }
     }
 
-    internal class CommandTargetList : EventExtra
+    internal class CommandTargetList : IEventExtra
     {
         public MachineTreeElement[] Targets { get; private set; }
 
