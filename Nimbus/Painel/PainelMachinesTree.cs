@@ -50,12 +50,6 @@ namespace Nimbus.Painel
         internal const string Selected = "»";
     }
 
-    internal enum TreeItemType
-    {
-        Folder,
-        Machine
-    }
-
     internal interface ITreeItem
     {
         public string Path { get; }
@@ -77,6 +71,8 @@ namespace Nimbus.Painel
         public void Toggle();
 
         public void ToggleAll(bool value);
+
+        public MachineTreeElement[] GetSelectedTree();
     }
 
 
@@ -85,22 +81,21 @@ namespace Nimbus.Painel
         private bool isOpened = false;
         private int level;
         private int isSelected = -1;
-        private string name;
 
-        public string Path { get; }
-        public string Name { get { return name; } }
+        private MachineTreeElement Mtd;
+
+        public string Path { get { return Mtd.Path; } }
+        public string Name { get { return Mtd.Name; } }
         public bool IsToggleable { get { return true; } }
-        public bool IsOpened { get; }
-        public bool IsSelected { get { return isSelected >= 0; } }
+        public bool IsOpened { get { return isOpened; } }
+        public bool HasSelected { get { return isSelected >= 0; } }
         private int Count { get { return items.Count; } }
 
         private List<ITreeItem> items = new();
 
-        public TreeItemFolder(string name, string path, int level = 0)
+        public TreeItemFolder(MachineTreeElement mtd, int level = 0)
         {
-            this.name = name;
-            Path = path;
-            IsOpened = false;
+            Mtd = mtd;
             this.level = level;
         }
 
@@ -286,24 +281,34 @@ namespace Nimbus.Painel
         {
             isSelected = value ? 0 : -1;
         }
+
+        public MachineTreeElement[] GetSelectedTree()
+        {
+            List<MachineTreeElement> mteList = [];
+            foreach (var item in items)
+            {
+                mteList.AddRange(item.GetSelectedTree());
+            }
+
+            return [.. mteList];
+        }
     }
 
     internal class TreeItemMachine : ITreeItem
     {
         private int level;
         private bool isSelected;
-        private string name;
 
-        public string Path { get; }
+        private MachineTreeElement Mtd;
+
+        public string Path { get { return Mtd.Path; } }
+        public string Name { get { return Mtd.Name; } }
 
         public bool IsToggleable { get { return false; } }
 
-        public string Name { get { return name; } }
-
-        public TreeItemMachine(string name, string path, int level = 0)
+        public TreeItemMachine(MachineTreeElement mtd, int level = 0)
         {
-            this.name = name;
-            Path = path;
+            Mtd = mtd;
             this.level = level;
         }
 
@@ -339,29 +344,23 @@ namespace Nimbus.Painel
                 str.Append("[/]");
             }
 
-            str.Append($"[yellow]{Icons.Item}");
-            /*
-            Random r = new();
-            if (r.Next(0, 2) == 0)
+            switch (Mtd.Status)
             {
-                str.Append($"[green]{Icons.Item}");
-            }
-            else
-            {
-                str.Append($"[red]{Icons.Item}");
-            }
-            */
-
-            if (isSelected)
-            {
-                str.Append("[/][blue] ");
-            }
-            else
-            {
-                str.Append("[/] ");
+                case MachineTreeElementStatus.None:
+                    str.Append($"[blue]{Icons.Item}");
+                    break;
+                case MachineTreeElementStatus.Pending:
+                    str.Append($"[yellow]{Icons.Item}");
+                    break;
+                case MachineTreeElementStatus.Ok:
+                    str.Append($"[green]{Icons.Item}");
+                    break;
+                case MachineTreeElementStatus.Error:
+                    str.Append($"[red]{Icons.Item}");
+                    break;
             }
 
-            str.Append(isSelected ? $"{Name}[/]" : $"{Name}");
+            str.Append(isSelected ? $"[/][blue] {Name}[/]" : $"[/] {Name}");
 
             var text = new Markup(str.ToString())
                 .Overflow(Overflow.Ellipsis);
@@ -373,6 +372,12 @@ namespace Nimbus.Painel
         {
             isSelected = value;
         }
+
+
+        public MachineTreeElement[] GetSelectedTree()
+        {
+            return [Mtd];
+        }
     }
 
     internal class PainelMachinesTree : IPainel
@@ -382,33 +387,34 @@ namespace Nimbus.Painel
         internal PainelMachinesTree()
         {
             // MachineTreeDisplayFolder("root", "/root/");
-            root = new TreeItemFolder("root", "/root/");
+            root = new TreeItemFolder(new MachineTreeElement("root", "/root/"));
 
-            var room1 = new TreeItemFolder("room1", "/root/room1/");
+            var room1 = new TreeItemFolder(new MachineTreeElement("room1", "/root/room1/"));
 
-            var place1 = new TreeItemFolder("place1", "/root/room1/place1");
-            var place2 = new TreeItemFolder("place2", "/root/room1/place2");
+            var place1 = new TreeItemFolder(new MachineTreeElement("place1", "/root/room1/place1"));
+            var place2 = new TreeItemFolder(new MachineTreeElement("place2", "/root/room1/place2"));
 
             room1.AddTreeItem(place1);
             room1.AddTreeItem(place2);
 
-            place1.AddTreeItem(new TreeItemMachine("machine1_1", "/root/room1/place1/machine1_1"));
-            place1.AddTreeItem(new TreeItemMachine("machine1_2", "/root/room1/place1/machine1_2"));
-            place1.AddTreeItem(new TreeItemMachine("machine1_3", "/root/room1/place1/machine1_3"));
-            place2.AddTreeItem(new TreeItemMachine("machine1_4", "/root/room1/place2/machine1_1"));
-            place2.AddTreeItem(new TreeItemMachine("machine1_5", "/root/room1/place2/machine1_1"));
+            place1.AddTreeItem(new TreeItemMachine(new MachineTreeElement("machine1_1", "/root/room1/place1/machine1_1")));
+            place1.AddTreeItem(new TreeItemMachine(new MachineTreeElement("machine1_2", "/root/room1/place1/machine1_2")));
+            place1.AddTreeItem(new TreeItemMachine(new MachineTreeElement("machine1_3", "/root/room1/place1/machine1_3")));
 
-            var room2 = new TreeItemFolder("room2", "/root/room2/");
+            place2.AddTreeItem(new TreeItemMachine(new MachineTreeElement("machine1_4", "/root/room1/place2/machine1_1")));
+            place2.AddTreeItem(new TreeItemMachine(new MachineTreeElement("machine1_5", "/root/room1/place2/machine1_1")));
 
-            room2.AddTreeItem(new TreeItemMachine("machine2_1", "/root/room1/machine2_1"));
-            room2.AddTreeItem(new TreeItemMachine("machine2_2", "/root/room1/machine2_2"));
-            room2.AddTreeItem(new TreeItemMachine("machine2_3", "/root/room1/machine2_3"));
+            var room2 = new TreeItemFolder(new MachineTreeElement("room2", "/root/room2/"));
 
-            var room3 = new TreeItemFolder("room3", "/root/room3/");
+            room2.AddTreeItem(new TreeItemMachine(new MachineTreeElement("machine2_1", "/root/room1/machine2_1")));
+            room2.AddTreeItem(new TreeItemMachine(new MachineTreeElement("machine2_2", "/root/room1/machine2_2")));
+            room2.AddTreeItem(new TreeItemMachine(new MachineTreeElement("machine2_3", "/root/room1/machine2_3")));
 
-            room3.AddTreeItem(new TreeItemMachine("machine3_1", "/root/room1/machine3_1"));
-            room3.AddTreeItem(new TreeItemMachine("machine3_2", "/root/room1/machine3_2"));
-            room3.AddTreeItem(new TreeItemMachine("machine3_3", "/root/room1/machine3_3"));
+            var room3 = new TreeItemFolder(new MachineTreeElement("room3", "/root/room3/"));
+
+            room3.AddTreeItem(new TreeItemMachine(new MachineTreeElement("machine3_1", "/root/room1/machine3_1")));
+            room3.AddTreeItem(new TreeItemMachine(new MachineTreeElement("machine3_2", "/root/room1/machine3_2")));
+            room3.AddTreeItem(new TreeItemMachine(new MachineTreeElement("machine3_3", "/root/room1/machine3_3")));
 
             root.AddTreeItem(room1);
             root.AddTreeItem(room2);
@@ -446,8 +452,10 @@ namespace Nimbus.Painel
                     root.SetSelected(true);
                     break;
                 case ConsoleKey.C:
-                    mEvent = new CommandEvent(EventType.OpenCommandPanel);
-                    GetSelected();
+                    mEvent = new Event(
+                        EventType.OpenCommandPanel,
+                        new CommandTargetList(root.GetSelectedTree())
+                        );
                     break;
                 case ConsoleKey.E:
                     break;

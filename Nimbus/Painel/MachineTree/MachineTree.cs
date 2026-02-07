@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Spectre.Console;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,21 +16,28 @@ namespace Nimbus.Painel.MachineTree
         public string Display();
     }
 
-    internal class MachineTreeDisplayFolder : TreeDisplayWrapper
+    internal enum MachineTreeElementStatus
     {
-        internal string Name { get; private set; }
-        internal string Path { get; private set; }
 
-        public string Display()
-        {
-            return Name;
-        }
+        None, // No coloring
+        Pending, // Yellow
+        Ok, // Green
+        Error, // Red
     }
 
-    internal class MachineTreeDisplayItem : TreeDisplayWrapper
+
+    internal class MachineTreeElement : TreeDisplayWrapper
     {
         internal string Name { get; private set; }
         internal string Path { get; private set; }
+        internal MachineTreeElementStatus Status { get; private set; }
+
+        internal MachineTreeElement(string name, string path)
+        {
+            Name = name;
+            Path = path;
+            Status = MachineTreeElementStatus.Pending;
+        }
 
         public string Display()
         {

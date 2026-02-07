@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Nimbus.Painel.MachineTree;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,47 +16,27 @@ namespace Nimbus.Misc
         SendCommand
     }
 
+    internal interface EventExtra;
+
     internal class Event
     {
         public EventType Type { get; private set; }
+        public EventExtra? Extra { get; private set; }
 
-        internal Event(EventType tipo)
+        internal Event(EventType tipo, EventExtra? extra = null)
         {
             Type = tipo;
+            Extra = extra;
         }
     }
 
-    internal enum CommandType
+    internal class CommandTargetList : EventExtra
     {
-        Shutdown, // Desligar
-        Reboot, // Reiniciar
-        WakeUp, // Acordar vie RDP (TCP - Porta 3389)
-        Shell, // cmd or powershell command
+        public MachineTreeElement[] Targets { get; private set; }
 
-        // TODO: PainelPing -> PainelCommand
-        Ping, // Ping
-    }
-
-    internal struct CommandTarget
-    {
-        // TODO: IPv6 support
-        internal UInt32 IP;
-        internal string DomainName;
-    }
-
-    internal class CommandEvent : Event
-    {        
-        internal CommandType CommandType { get; private set; }
-
-        internal CommandTarget[] CommandTargets { get; private set; }
-
-        internal CommandEvent(
-            CommandType tipo,
-            CommandTarget[] targets
-            ) : base(EventType.SendCommand)
+        internal CommandTargetList(MachineTreeElement[] targets)
         {
-            CommandType = tipo;
-            CommandTargets = targets;
+            Targets = targets;
         }
     }
 }
