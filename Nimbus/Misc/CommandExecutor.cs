@@ -27,10 +27,12 @@ namespace Nimbus.Misc
         Finished
     }
 
-    internal struct Machine
+    internal struct Computer
     {
         // TODO: IPv6 support
         internal IPAddress? IpAddress { get; }
+
+        internal string? Name { get; }
 
         internal string? DomainName { get; }
     }
@@ -39,13 +41,13 @@ namespace Nimbus.Misc
     {
         private readonly CommandType commandType;
 
-        private readonly List<Machine> commandTargets = [];
+        private readonly List<Computer> commandTargets = [];
 
         public bool HasDisplay { get; private set; }
 
         public CommandStatus Status { get; private set; }
 
-        internal CommandExecutor(CommandType tipo, Machine[] targets)
+        internal CommandExecutor(CommandType tipo, Computer[] targets)
         {
             commandType = tipo;
             commandTargets.AddRange(targets);
@@ -65,7 +67,7 @@ namespace Nimbus.Misc
             }
         }
 
-        internal void AddTarget(Machine target)
+        internal void AddTarget(Computer target)
         {
             if (Status != CommandStatus.Waiting)
             {
@@ -136,37 +138,37 @@ namespace Nimbus.Misc
             return tasksResults;
         }
 
-        private async static Task<int> Shutdown(Machine machine)
+        private async static Task<int> Shutdown(Computer machine)
         {
             await Task.Delay(1000);
             return 0;
         }
 
-        private async static Task<int> Reboot(Machine machine)
+        private async static Task<int> Reboot(Computer machine)
         {
             await Task.Delay(1000);
             return 0;
         }
 
-        private async static Task<int> WakeUp(Machine machine)
+        private async static Task<int> WakeUp(Computer machine)
         {
             await Task.Delay(1000);
             return 0;
         }
 
-        private async static Task<int> Shell(Machine machine)
+        private async static Task<int> Shell(Computer machine)
         {
             await Task.Delay(1000);
             return 0;
         }
 
-        private async static Task<int> Ping(Machine machine)
+        private async static Task<int> Ping(Computer machine)
         {
             await Task.Delay(1000);
             return 0;
         }
 
-        private async static Task<int> Message(Machine machine, string message)
+        private async static Task<int> Message(Computer machine, string message)
         {
             var IpAddress = await ResolveDomainName(machine);
             if (IpAddress == null)
@@ -195,7 +197,7 @@ namespace Nimbus.Misc
             return process.ExitCode;
         }
 
-        private async static Task<IPAddress?> ResolveDomainName(Machine machine)
+        private async static Task<IPAddress?> ResolveDomainName(Computer machine)
         {
             IPAddress? IpAddress = null;
             if (machine.IpAddress != null)

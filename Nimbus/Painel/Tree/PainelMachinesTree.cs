@@ -1,6 +1,5 @@
 ﻿using Nimbus.Config;
 using Nimbus.Event;
-using Nimbus.Painel.MachineTree;
 using Spectre.Console;
 using Spectre.Console.Rendering;
 using System;
@@ -40,9 +39,9 @@ using System.Threading.Tasks;
 // ├─ item
 // └─ item
 
-namespace Nimbus.Painel
+namespace Nimbus.Painel.Tree
 {
-    internal interface ITreeItem
+    internal interface ITreeItemOld
     {
         public string Path { get; }
 
@@ -68,7 +67,7 @@ namespace Nimbus.Painel
     }
 
 
-    internal class TreeItemFolder : ITreeItem
+    internal class TreeItemFolder : ITreeItemOld
     {
         private bool isOpened = false;
         private int level;
@@ -83,7 +82,7 @@ namespace Nimbus.Painel
         public bool HasSelected { get { return isSelected >= 0; } }
         private int Count { get { return items.Count; } }
 
-        private List<ITreeItem> items = new();
+        private List<ITreeItemOld> items = new();
 
         public TreeItemFolder(MachineTreeElement mtd, int level = 0)
         {
@@ -221,7 +220,7 @@ namespace Nimbus.Painel
             return overflow;
         }
 
-        public void AddTreeItem(ITreeItem item)
+        public void AddTreeItem(ITreeItemOld item)
         {
             item.SetLevel(level + 1);
             items.Add(item);
@@ -294,7 +293,7 @@ namespace Nimbus.Painel
         }
     }
 
-    internal class TreeItemMachine : ITreeItem
+    internal class TreeItemMachine : ITreeItemOld
     {
         private int level;
         private bool isSelected;

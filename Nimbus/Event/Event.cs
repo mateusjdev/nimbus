@@ -1,5 +1,5 @@
 ﻿using Nimbus.Misc;
-using Nimbus.Painel.MachineTree;
+using Nimbus.Painel.Tree;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -59,9 +59,9 @@ namespace Nimbus.Event
 
     internal class ExtraCommandTargetList : IEventExtra
     {
-        public Machine[] Targets { get; private set; }
+        public Computer[] Targets { get; private set; }
 
-        internal ExtraCommandTargetList(Machine[] targets)
+        internal ExtraCommandTargetList(Computer[] targets)
         {
             Targets = targets;
         }

@@ -14,9 +14,9 @@ namespace Nimbus.Painel.SelectPrompt
     internal sealed class PSelectPromptCommand : PSelectPromptBase<CommandType>
     {
         private const string _PanelName = "Seletor de Comando";
-        private readonly Machine[] Targets;
+        private readonly Computer[] Targets;
 
-        internal PSelectPromptCommand(EventPublisher ep, Machine[] targets) : base(ep, _PanelName)
+        internal PSelectPromptCommand(EventPublisher ep, Computer[] targets) : base(ep, _PanelName)
         {
             Targets = targets;
 

@@ -6,17 +6,8 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Nimbus.Painel.MachineTree
+namespace Nimbus.Painel.Tree
 {
-    internal class MachineTree
-    {
-    }
-
-    internal interface TreeDisplayWrapper
-    {
-        public string Display();
-    }
-
     internal enum MachineTreeElementStatus
     {
 
@@ -25,7 +16,6 @@ namespace Nimbus.Painel.MachineTree
         Ok, // Green
         Error, // Red
     }
-
 
     internal class MachineTreeElement : TreeDisplayWrapper
     {
